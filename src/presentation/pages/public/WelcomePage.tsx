@@ -1,6 +1,6 @@
 import { CheckCircle2, Hotel, Layers3, Route } from 'lucide-react'
 import { Link } from 'react-router-dom'
-
+import { BackendConnectionStatus } from '@/presentation/components/common'
 import { Button } from '@/presentation/components/ui/button'
 import {
   Card,
@@ -79,6 +79,9 @@ export default function WelcomePage() {
             </Card>
           )
         })}
+      </div>
+      <div className="mt-10">
+        <BackendConnectionStatus />
       </div>
     </section>
   )
