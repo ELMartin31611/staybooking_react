@@ -1,5 +1,6 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 
+import { localTokenStorage } from '@/infrastructure/storage/local-token-storage'
 import {
   AdminLayout,
   PrivateLayout,
@@ -11,26 +12,36 @@ import ForbiddenPage from '@/presentation/pages/ForbiddenPage'
 import NotFoundPage from '@/presentation/pages/NotFoundPage'
 import PrivatePlaceholderPage from '@/presentation/pages/profile/PrivatePlaceholderPage'
 import ComingSoonPage from '@/presentation/pages/public/ComingSoonPage'
-import WelcomePage from '@/presentation/pages/public/WelcomePage'
+import HomePage from '@/presentation/pages/public/HomePage'
 
 import ProtectedRoute from './ProtectedRoute'
 
 export default function AppRouter() {
-  const isAuthenticated = false
+  const isAuthenticated = localTokenStorage.hasTokens()
   const userRole: string | null = null
 
   return (
     <BrowserRouter>
       <Routes>
         <Route element={<PublicLayout />}>
-          <Route index element={<WelcomePage />} />
+          <Route index element={<HomePage />} />
 
           <Route
             path="hoteles"
             element={
               <ComingSoonPage
                 title="Catálogo de hoteles"
-                description="El catálogo real será implementado en su rama correspondiente."
+                description="El catálogo completo será desarrollado por el Integrante 1."
+              />
+            }
+          />
+
+          <Route
+            path="hoteles/:hotelId"
+            element={
+              <ComingSoonPage
+                title="Detalle del hotel"
+                description="El detalle, tipos y habitaciones serán desarrollados por el Integrante 2."
               />
             }
           />
@@ -40,7 +51,7 @@ export default function AppRouter() {
             element={
               <ComingSoonPage
                 title="Servicios"
-                description="Los servicios de habitaciones estarán disponibles próximamente."
+                description="Los servicios incluidos se mostrarán con el detalle de las habitaciones."
               />
             }
           />
@@ -49,11 +60,37 @@ export default function AppRouter() {
         <Route path="/login" element={<LoginPlaceholderPage />} />
         <Route path="/403" element={<ForbiddenPage />} />
 
-        <Route element={<ProtectedRoute isAuthenticated={isAuthenticated} />}>
+        <Route
+          element={
+            <ProtectedRoute
+              isAuthenticated={isAuthenticated}
+            />
+          }
+        >
           <Route element={<PrivateLayout />}>
             <Route
               path="/perfil"
               element={<PrivatePlaceholderPage />}
+            />
+
+            <Route
+              path="/mis-reservas"
+              element={
+                <ComingSoonPage
+                  title="Mis reservas"
+                  description="Aquí aparecerán las reservas del usuario autenticado."
+                />
+              }
+            />
+
+            <Route
+              path="/reserva/seleccion"
+              element={
+                <ComingSoonPage
+                  title="Crear reserva"
+                  description="La habitación seleccionada continuará aquí después del login."
+                />
+              }
             />
           </Route>
         </Route>
