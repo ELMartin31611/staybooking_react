@@ -4,6 +4,10 @@ import type {
   FormEvent,
 } from 'react'
 
+import { Button } from '@/presentation/components/ui/button'
+import { Input } from '@/presentation/components/ui/input'
+import { Label } from '@/presentation/components/ui/label'
+
 type RegisterFormData = {
   username: string
   email: string
@@ -30,6 +34,7 @@ export default function RegisterForm({
   })
 
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
 
   function change(
     e: ChangeEvent<HTMLInputElement>,
@@ -45,12 +50,13 @@ export default function RegisterForm({
   ) {
     e.preventDefault()
 
-    setLoading(true)
-
     try {
+      setLoading(true)
+      setError('')
+
       await onSubmit(form)
-    } catch (error) {
-      console.log(error)
+    } catch {
+      setError('No se pudo crear la cuenta')
     } finally {
       setLoading(false)
     }
@@ -59,44 +65,93 @@ export default function RegisterForm({
   return (
     <form
       onSubmit={submit}
-      className="space-y-3"
+      className="space-y-4"
     >
-      <input
-        name="username"
-        placeholder="Usuario"
-        onChange={change}
-      />
+      <div className="space-y-2">
+        <Label htmlFor="username">Usuario</Label>
 
-      <input
-        name="first_name"
-        placeholder="Nombre"
-        onChange={change}
-      />
+        <Input
+          id="username"
+          name="username"
+          placeholder="usuario"
+          value={form.username}
+          onChange={change}
+          required
+        />
+      </div>
 
-      <input
-        name="last_name"
-        placeholder="Apellido"
-        onChange={change}
-      />
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-2">
+          <Label htmlFor="first_name">Nombre</Label>
 
-      <input
-        name="email"
-        placeholder="Correo"
-        onChange={change}
-      />
+          <Input
+            id="first_name"
+            name="first_name"
+            placeholder="Juan"
+            value={form.first_name}
+            onChange={change}
+            required
+          />
+        </div>
 
-      <input
-        name="password"
-        type="password"
-        placeholder="Contraseña"
-        onChange={change}
-      />
+        <div className="space-y-2">
+          <Label htmlFor="last_name">Apellido</Label>
 
-      <button disabled={loading}>
+          <Input
+            id="last_name"
+            name="last_name"
+            placeholder="Pérez"
+            value={form.last_name}
+            onChange={change}
+            required
+          />
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="email">Correo electrónico</Label>
+
+        <Input
+          id="email"
+          type="email"
+          name="email"
+          placeholder="correo@ejemplo.com"
+          value={form.email}
+          onChange={change}
+          required
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="password">Contraseña</Label>
+
+        <Input
+          id="password"
+          type="password"
+          name="password"
+          placeholder="********"
+          value={form.password}
+          onChange={change}
+          required
+        />
+      </div>
+
+      {error && (
+        <p className="text-sm text-destructive">
+          {error}
+        </p>
+      )}
+
+      <Button
+        className="w-full"
+        size="lg"
+        type="submit"
+        disabled={loading}
+      >
         {loading
-          ? 'Creando...'
+          ? 'Creando cuenta...'
           : 'Registrarse'}
-      </button>
+      </Button>
     </form>
   )
 }

@@ -1,6 +1,10 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 
+import { Button } from '@/presentation/components/ui/button'
+import { Input } from '@/presentation/components/ui/input'
+import { Label } from '@/presentation/components/ui/label'
+
 interface LoginFormProps {
   onSubmit: (email: string, password: string) => Promise<void>
 }
@@ -36,38 +40,49 @@ export default function LoginForm({
   return (
     <form
       onSubmit={handleSubmit}
-      className="space-y-4"
+      className="space-y-5"
     >
-      <input
-        type="email"
-        placeholder="Correo"
-        value={email}
-        onChange={
-          (e) => setEmail(e.target.value)
-        }
-        required
-      />
+      <div className="space-y-2">
+        <Label htmlFor="email">Correo electrónico</Label>
 
-      <input
-        type="password"
-        placeholder="Contraseña"
-        value={password}
-        onChange={
-          (e) => setPassword(e.target.value)
-        }
-        required
-      />
+        <Input
+          id="email"
+          type="email"
+          placeholder="correo@ejemplo.com"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+        />
+      </div>
 
-      {error && <p>{error}</p>}
+      <div className="space-y-2">
+        <Label htmlFor="password">Contraseña</Label>
 
-      <button
-        type="submit"
+        <Input
+          id="password"
+          type="password"
+          placeholder="********"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+        />
+      </div>
+
+      {error && (
+        <p className="text-sm text-destructive">
+          {error}
+        </p>
+      )}
+
+      <Button
+        className="w-full"
+        size="lg"
         disabled={loading}
       >
         {loading
           ? 'Ingresando...'
-          : 'Ingresar'}
-      </button>
+          : 'Iniciar sesión'}
+      </Button>
     </form>
   )
 }
