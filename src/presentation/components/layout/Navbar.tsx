@@ -7,8 +7,13 @@ import {
   Sparkles,
   UserRound,
 } from 'lucide-react'
-import { Link, NavLink } from 'react-router-dom'
+import {
+  Link,
+  NavLink,
+  useNavigate,
+} from 'react-router-dom'
 
+import { localTokenStorage } from '@/infrastructure/storage/local-token-storage'
 import { Button } from '@/presentation/components/ui/button'
 import {
   Sheet,
@@ -33,6 +38,15 @@ const navigationItems = [
 
 export function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const navigate = useNavigate()
+  const isAuthenticated =
+    localTokenStorage.hasTokens()
+
+  function handleLogout() {
+    localTokenStorage.clearTokens()
+    navigate('/')
+    window.location.reload()
+  }
 
   return (
     <header className="sticky top-0 z-50 border-b bg-white/95 backdrop-blur">
@@ -68,12 +82,25 @@ export function Navbar() {
         </nav>
 
         <div className="flex items-center gap-2">
-          <Button className="hidden sm:inline-flex" asChild>
-            <Link to="/login">
+          {isAuthenticated ? (
+            <Button
+              variant="outline"
+              onClick={handleLogout}
+            >
               <UserRound className="size-4" />
-              Iniciar sesión
-            </Link>
-          </Button>
+              Cerrar sesión
+            </Button>
+          ) : (
+            <Button
+              className="hidden sm:inline-flex"
+              asChild
+            >
+              <Link to="/login">
+                <UserRound className="size-4" />
+                Iniciar sesión
+              </Link>
+            </Button>
+          )}
 
           <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
             <SheetTrigger asChild>
@@ -121,15 +148,28 @@ export function Navbar() {
                 })}
               </nav>
 
-              <Button className="mt-6 w-full" asChild>
-                <Link
-                  to="/login"
-                  onClick={() => setIsMenuOpen(false)}
+              {isAuthenticated ? (
+                <Button
+                  className="mt-6 w-full"
+                  onClick={() => {
+                    handleLogout()
+                    setIsMenuOpen(false)
+                  }}
                 >
                   <UserRound className="size-4" />
-                  Iniciar sesión
-                </Link>
-              </Button>
+                  Cerrar sesión
+                </Button>
+              ) : (
+                <Button className="mt-6 w-full" asChild>
+                  <Link
+                    to="/login"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <UserRound className="size-4" />
+                    Iniciar sesión
+                  </Link>
+                </Button>
+              )}
             </SheetContent>
           </Sheet>
         </div>
