@@ -31,7 +31,19 @@ export class CustomerUseCase {
     return this.repository.getAddresses()
   }
 
+  createAddress(
+    data: Omit<import('@/domain/entities/address.entity').Address, 'id'>,
+  ) {
+    return this.repository.createAddress(data)
+  }
+
   getDocuments() {
     return this.repository.getDocuments()
+  }
+
+  createDocument(
+    data: Omit<import('@/domain/entities/document.entity').Document, 'id'>,
+  ) {
+    return this.repository.createDocument(data)
   }
 }

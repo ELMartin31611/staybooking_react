@@ -12,6 +12,8 @@ import RegisterPage from '@/presentation/pages/auth/RegisterPage'
 import ForbiddenPage from '@/presentation/pages/ForbiddenPage'
 import NotFoundPage from '@/presentation/pages/NotFoundPage'
 import ProfilePage from '@/presentation/pages/profile/ProfilePage'
+import MyReservationsPage from '@/presentation/pages/reservations/MyReservationsPage'
+import SelectedReservationPage from '@/presentation/pages/reservations/SelectedReservationPage'
 import ComingSoonPage from '@/presentation/pages/public/ComingSoonPage'
 import HomePage from '@/presentation/pages/public/HomePage'
 
@@ -59,7 +61,7 @@ export default function AppRouter() {
         </Route>
 
         <Route path="/login" element={<LoginPage />} />
-  <Route path="/register" element={<RegisterPage />} />
+          <Route path="/register" element={<RegisterPage />} />
         <Route path="/403" element={<ForbiddenPage />} />
 
         <Route
@@ -77,22 +79,12 @@ export default function AppRouter() {
 
             <Route
               path="/mis-reservas"
-              element={
-                <ComingSoonPage
-                  title="Mis reservas"
-                  description="Aquí aparecerán las reservas del usuario autenticado."
-                />
-              }
+              element={<MyReservationsPage />}
             />
 
             <Route
               path="/reserva/seleccion"
-              element={
-                <ComingSoonPage
-                  title="Crear reserva"
-                  description="La habitación seleccionada continuará aquí después del login."
-                />
-              }
+              element={<SelectedReservationPage />}
             />
           </Route>
         </Route>

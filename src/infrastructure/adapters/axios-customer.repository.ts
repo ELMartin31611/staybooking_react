@@ -85,6 +85,20 @@ export class AxiosCustomerRepository
 
   }
 
+  async createAddress(
+    data: Omit<Address, 'id'>,
+  ): Promise<Address> {
+
+    const { data: address } =
+      await apiClient.post<Address>(
+        apiConfig.endpoints.customers.addresses,
+        data,
+      )
+
+    return address
+
+  }
+
   async getDocuments(): Promise<Document[]> {
 
     const { data } =
@@ -93,6 +107,20 @@ export class AxiosCustomerRepository
       )
 
     return toArray<Document>(data)
+
+  }
+
+  async createDocument(
+    data: Omit<Document, 'id'>,
+  ): Promise<Document> {
+
+    const { data: document } =
+      await apiClient.post<Document>(
+        apiConfig.endpoints.customers.documents,
+        data,
+      )
+
+    return document
 
   }
 

@@ -15,5 +15,13 @@ export interface CustomerRepository {
 
   getAddresses(): Promise<Address[]>
 
+  createAddress(
+    data: Omit<Address, 'id'>,
+  ): Promise<Address>
+
   getDocuments(): Promise<Document[]>
+
+  createDocument(
+    data: Omit<Document, 'id'>,
+  ): Promise<Document>
 }
