@@ -14,8 +14,8 @@ interface RetryableRequestConfig
 }
 
 interface RefreshedTokens {
-  access_token: string
-  refresh_token?: string
+  access: string
+  refresh?: string
 }
 
 export const SESSION_EXPIRED_EVENT =
@@ -117,7 +117,7 @@ apiClient.interceptors.response.use(
         .then(({ data }) => {
           localTokenStorage.updateTokens(data)
 
-          return data.access_token
+          return data.access
         })
         .catch((refreshError: unknown) => {
           localTokenStorage.clearTokens()
@@ -139,8 +139,8 @@ apiClient.interceptors.response.use(
       )
 
       return apiClient(originalRequest)
-    } catch (refreshError) {
-      return Promise.reject(refreshError)
+    } catch (refresahError) {
+      return Promise.reject(refresahError)
     }
   },
 )

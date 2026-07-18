@@ -9,12 +9,6 @@ import {
   AlertDescription,
 } from '@/presentation/components/ui/alert'
 import { Button } from '@/presentation/components/ui/button'
-
-import { Link, useNavigate } from 'react-router-dom'
-
-import type { RegisterDto } from '@/application/dtos/register.dto'
-import { authUseCase } from '@/infrastructure/factories/auth.factory'
-import RegisterForm from '@/presentation/components/auth/RegisterForm'
 import {
   Card,
   CardContent,
@@ -25,7 +19,6 @@ import {
 import { Input } from '@/presentation/components/ui/input'
 import { Label } from '@/presentation/components/ui/label'
 
-
 export default function RegisterPage() {
   const navigate = useNavigate()
 
@@ -35,8 +28,10 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault()
+  async function handleSubmit(
+    event: FormEvent<HTMLFormElement>,
+  ) {
+    event.preventDefault()
 
     try {
       setLoading(true)
@@ -49,11 +44,11 @@ export default function RegisterPage() {
       })
 
       navigate('/login', { replace: true })
-    } catch (error: unknown) {
-      if (error instanceof ApiException) {
-        setError(error.message)
+    } catch (caughtError: unknown) {
+      if (caughtError instanceof ApiException) {
+        setError(caughtError.message)
       } else {
-        setError('No se pudo crear la cuenta')
+        setError('No se pudo crear la cuenta.')
       }
     } finally {
       setLoading(false)
@@ -61,29 +56,15 @@ export default function RegisterPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-muted/40 px-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Crear cuenta</CardTitle>
-          <CardDescription>
-            Regístrate para reservar hoteles en StayBooking.
-
-  async function handleRegister(data: RegisterDto) {
-    await authUseCase.register(data)
-
-    navigate('/login')
-  }
-
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-muted/30 px-4">
+    <main className="flex min-h-screen items-center justify-center bg-muted/40 px-4 py-8">
       <Card className="w-full max-w-md shadow-xl">
-        <CardHeader>
-          <CardTitle className="text-center text-2xl">
+        <CardHeader className="text-center">
+          <CardTitle className="text-2xl">
             Crear cuenta
           </CardTitle>
 
-          <CardDescription className="text-center">
-            Únete a StayBooking y reserva tu hotel
+          <CardDescription>
+            Regístrate para reservar en StayBooking.
           </CardDescription>
         </CardHeader>
 
@@ -91,10 +72,13 @@ export default function RegisterPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="username">Usuario</Label>
+
               <Input
                 id="username"
                 value={username}
-                onChange={(event) => setUsername(event.target.value)}
+                onChange={(event) =>
+                  setUsername(event.target.value)
+                }
                 disabled={loading}
                 required
               />
@@ -102,11 +86,14 @@ export default function RegisterPage() {
 
             <div className="space-y-2">
               <Label htmlFor="email">Correo</Label>
+
               <Input
                 id="email"
                 type="email"
                 value={email}
-                onChange={(event) => setEmail(event.target.value)}
+                onChange={(event) =>
+                  setEmail(event.target.value)
+                }
                 disabled={loading}
                 required
               />
@@ -114,11 +101,15 @@ export default function RegisterPage() {
 
             <div className="space-y-2">
               <Label htmlFor="password">Contraseña</Label>
+
               <Input
                 id="password"
                 type="password"
+                minLength={8}
                 value={password}
-                onChange={(event) => setPassword(event.target.value)}
+                onChange={(event) =>
+                  setPassword(event.target.value)
+                }
                 disabled={loading}
                 required
               />
@@ -130,23 +121,26 @@ export default function RegisterPage() {
               </Alert>
             )}
 
-            <Button className="w-full" type="submit" disabled={loading}>
+            <Button
+              className="w-full"
+              type="submit"
+              disabled={loading}
+            >
               {loading ? 'Creando cuenta...' : 'Registrarse'}
             </Button>
           </form>
 
-          <RegisterForm onSubmit={handleRegister} />
-
           <p className="mt-4 text-center text-sm text-muted-foreground">
             ¿Ya tienes cuenta?{' '}
-            <Link to="/login" className="text-primary hover:underline">
+            <Link
+              to="/login"
+              className="text-primary hover:underline"
+            >
               Inicia sesión
             </Link>
           </p>
         </CardContent>
       </Card>
     </main>
-
-    </div>
   )
 }

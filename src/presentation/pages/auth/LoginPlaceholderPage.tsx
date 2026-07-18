@@ -1,6 +1,6 @@
-import { AlertCircle, Hotel } from 'lucide-react'
 import { useState } from 'react'
 import type { FormEvent } from 'react'
+import { AlertCircle, Hotel } from 'lucide-react'
 import {
   Link,
   useLocation,
@@ -10,6 +10,7 @@ import {
 import { ApiException } from '@/domain/exceptions/api.exception'
 import { authUseCase } from '@/infrastructure/factories/auth.factory'
 import { localTokenStorage } from '@/infrastructure/storage/local-token-storage'
+import { localUserStorage } from '@/infrastructure/storage/local-user-storage'
 import {
   Alert,
   AlertDescription,
@@ -32,31 +33,45 @@ type LoginLocationState = {
 export default function LoginPlaceholderPage() {
   const location = useLocation()
   const navigate = useNavigate()
-  const [email, setEmail] = useState('')
+
+  const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [errorMessage, setErrorMessage] =
+    useState<string | null>(null)
 
-  const handleLogin = async (event: FormEvent) => {
+  async function handleLogin(
+    event: FormEvent<HTMLFormElement>,
+  ) {
     event.preventDefault()
-    setIsSubmitting(true)
-    setErrorMessage(null)
 
     try {
+      setIsSubmitting(true)
+      setErrorMessage(null)
+
       const tokens = await authUseCase.login({
-        email: email.trim(),
+        username: username.trim(),
         password,
       })
 
       localTokenStorage.saveTokens(tokens)
-      await authUseCase.getProfile()
 
-      const from =
-        (location.state as LoginLocationState | null)
-          ?.from || '/perfil'
+      const profile = await authUseCase.getProfile()
+      localUserStorage.saveUser(profile)
 
-      navigate(from, { replace: true })
+      const state =
+        location.state as LoginLocationState | null
+
+      const destination =
+        state?.from?.startsWith('/')
+          ? state.from
+          : '/perfil'
+
+      navigate(destination, { replace: true })
     } catch (error: unknown) {
+      localTokenStorage.clearTokens()
+      localUserStorage.clearUser()
+
       if (error instanceof ApiException) {
         setErrorMessage(error.message)
       } else {
@@ -77,7 +92,9 @@ export default function LoginPlaceholderPage() {
             <Hotel className="size-6" />
           </div>
 
-          <CardTitle className="text-2xl">Iniciar sesión</CardTitle>
+          <CardTitle className="text-2xl">
+            Iniciar sesión
+          </CardTitle>
 
           <CardDescription>
             Ingresa tus credenciales para continuar.
@@ -85,32 +102,45 @@ export default function LoginPlaceholderPage() {
         </CardHeader>
 
         <CardContent>
-          <form className="space-y-4" onSubmit={handleLogin}>
+          <form
+            className="space-y-4"
+            onSubmit={handleLogin}
+          >
             <div className="space-y-2">
-              <Label htmlFor="email">Correo</Label>
+              <Label htmlFor="username">
+                Nombre de usuario
+              </Label>
 
               <Input
-                id="email"
-                type="email"
-                autoComplete="email"
-                placeholder="correo@ejemplo.com"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
+                id="username"
+                name="username"
+                type="text"
+                autoComplete="username"
+                placeholder="Nombre de usuario"
+                value={username}
+                onChange={(event) =>
+                  setUsername(event.target.value)
+                }
                 disabled={isSubmitting}
                 required
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">Contraseña</Label>
+              <Label htmlFor="password">
+                Contraseña
+              </Label>
 
               <Input
                 id="password"
+                name="password"
                 type="password"
                 autoComplete="current-password"
                 placeholder="********"
                 value={password}
-                onChange={(event) => setPassword(event.target.value)}
+                onChange={(event) =>
+                  setPassword(event.target.value)
+                }
                 disabled={isSubmitting}
                 required
               />
@@ -119,7 +149,10 @@ export default function LoginPlaceholderPage() {
             {errorMessage && (
               <Alert variant="destructive">
                 <AlertCircle className="size-4" />
-                <AlertDescription>{errorMessage}</AlertDescription>
+
+                <AlertDescription>
+                  {errorMessage}
+                </AlertDescription>
               </Alert>
             )}
 
@@ -128,11 +161,17 @@ export default function LoginPlaceholderPage() {
               type="submit"
               disabled={isSubmitting}
             >
-              {isSubmitting ? 'Ingresando...' : 'Ingresar'}
+              {isSubmitting
+                ? 'Ingresando...'
+                : 'Ingresar'}
             </Button>
           </form>
 
-          <Button className="mt-3 w-full" variant="outline" asChild>
+          <Button
+            className="mt-3 w-full"
+            variant="outline"
+            asChild
+          >
             <Link to="/">Volver al inicio</Link>
           </Button>
         </CardContent>
