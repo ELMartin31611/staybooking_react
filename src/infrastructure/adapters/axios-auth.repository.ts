@@ -1,21 +1,36 @@
+
 import type { AuthTokens } from '@/domain/entities/auth-tokens.entity'
 import type { UserProfile } from '@/domain/entities/user-profile.entity'
 import type { RegisterDto } from '@/application/dtos/register.dto'
 import type { AuthRepository } from '@/domain/ports/auth.repository'
+
+import type { RegisterDto } from '@/application/dtos/register.dto'
+import type { AuthTokens } from '@/domain/entities/auth-tokens.entity'
+import type { UserProfile } from '@/domain/entities/user-profile.entity'
+import type { AuthRepository } from '@/domain/ports/auth.repository'
+
+
 import { apiConfig } from '@/infrastructure/config/api.config'
 import { apiClient } from '@/infrastructure/http/axios-client'
 
 export class AxiosAuthRepository
+
   implements AuthRepository {
   async login(
     username: string,
+  implements AuthRepository
+{
+  async login(
+    email: string,
     password: string,
   ): Promise<AuthTokens> {
     const { data } =
       await apiClient.post<AuthTokens>(
         apiConfig.endpoints.auth.login,
         {
+
           username,
+          email,
           password,
         },
       )
@@ -24,11 +39,19 @@ export class AxiosAuthRepository
   }
 
   async register(
+
     data: RegisterDto,
   ): Promise<void> {
     await apiClient.post(
       apiConfig.endpoints.auth.register,
       data,
+
+    registerData: RegisterDto,
+  ): Promise<void> {
+    await apiClient.post(
+      apiConfig.endpoints.auth.register,
+      registerData,
+
     )
   }
 
@@ -40,6 +63,7 @@ export class AxiosAuthRepository
 
     return data
   }
+
 
   async updateProfile(
     data: Partial<UserProfile>,

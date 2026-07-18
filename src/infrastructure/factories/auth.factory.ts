@@ -8,3 +8,8 @@ export const authUseCase =
   new AuthUseCase(
     authRepository,
   )
+
+
+export function authFactory() {
+  return authUseCase
+}

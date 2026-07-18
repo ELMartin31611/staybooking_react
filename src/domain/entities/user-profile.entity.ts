@@ -6,4 +6,7 @@ export interface UserProfile {
   last_name: string
   rol?: string
   foto_url?: string | null
+  rol: string
+  estado: string
+
 }

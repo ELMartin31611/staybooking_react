@@ -62,6 +62,7 @@ export default function AppRouter() {
 
         <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+        <Route path="/register" element={<RegisterPage />} />
         <Route path="/403" element={<ForbiddenPage />} />
 
         <Route

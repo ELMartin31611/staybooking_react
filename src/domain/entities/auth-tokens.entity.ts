@@ -1,9 +1,4 @@
 export interface AuthTokens {
-  access: string
-  refresh: string
-}
-
-export interface RefreshedTokens {
-  access: string
-  refresh?: string
+  access_token: string
+  refresh_token: string
 }

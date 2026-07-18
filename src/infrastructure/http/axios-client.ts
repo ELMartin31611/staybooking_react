@@ -3,7 +3,6 @@ import axios, {
   type InternalAxiosRequestConfig,
 } from 'axios'
 
-import type { RefreshedTokens } from '@/domain/entities/auth-tokens.entity'
 import { apiConfig } from '@/infrastructure/config/api.config'
 import { localTokenStorage } from '@/infrastructure/storage/local-token-storage'
 
@@ -12,6 +11,11 @@ import { parseApiError } from './parse-api-error'
 interface RetryableRequestConfig
   extends InternalAxiosRequestConfig {
   _retry?: boolean
+}
+
+interface RefreshedTokens {
+  access_token: string
+  refresh_token?: string
 }
 
 export const SESSION_EXPIRED_EVENT =
@@ -113,7 +117,7 @@ apiClient.interceptors.response.use(
         .then(({ data }) => {
           localTokenStorage.updateTokens(data)
 
-          return data.access
+          return data.access_token
         })
         .catch((refreshError: unknown) => {
           localTokenStorage.clearTokens()
