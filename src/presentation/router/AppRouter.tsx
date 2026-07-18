@@ -11,6 +11,8 @@ import LoginPage from '@/presentation/pages/auth/LoginPage'
 import RegisterPage from '@/presentation/pages/auth/RegisterPage'
 import ForbiddenPage from '@/presentation/pages/ForbiddenPage'
 import NotFoundPage from '@/presentation/pages/NotFoundPage'
+import PrivatePlaceholderPage from '@/presentation/pages/profile/PrivatePlaceholderPage'
+import HotelsCatalogPage from '@/presentation/pages/catalog/HotelsCatalogPage'
 import ProfilePage from '@/presentation/pages/profile/ProfilePage'
 import MyReservationsPage from '@/presentation/pages/reservations/MyReservationsPage'
 import SelectedReservationPage from '@/presentation/pages/reservations/SelectedReservationPage'
@@ -32,12 +34,7 @@ export default function AppRouter() {
 
           <Route
             path="hoteles"
-            element={
-              <ComingSoonPage
-                title="Catálogo de hoteles"
-                description="El catálogo completo será desarrollado por el Integrante 1."
-              />
-            }
+            element={<HotelsCatalogPage />}
           />
 
           <Route
