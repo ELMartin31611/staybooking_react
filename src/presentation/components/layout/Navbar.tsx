@@ -7,8 +7,14 @@ import {
   Sparkles,
   UserRound,
 } from 'lucide-react'
-import { Link, NavLink } from 'react-router-dom'
+import {
+  Link,
+  NavLink,
+  useNavigate,
+} from 'react-router-dom'
 
+import { localTokenStorage } from '@/infrastructure/storage/local-token-storage'
+import { localUserStorage } from '@/infrastructure/storage/local-user-storage'
 import { Button } from '@/presentation/components/ui/button'
 import {
   Sheet,
@@ -33,6 +39,17 @@ const navigationItems = [
 
 export function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const navigate = useNavigate()
+  const isAuthenticated =
+    localTokenStorage.hasTokens()
+  const user = localUserStorage.getUser()
+
+  function handleLogout() {
+    localTokenStorage.clearTokens()
+    localUserStorage.clearUser()
+    navigate('/')
+    window.location.reload()
+  }
 
   return (
     <header className="sticky top-0 z-50 border-b bg-white/95 backdrop-blur">
@@ -48,6 +65,22 @@ export function Navbar() {
         </Link>
 
         <nav className="hidden items-center gap-1 lg:flex">
+          {user?.rol === 'ADMIN' && (
+            <NavLink
+              to="/admin"
+              className={({ isActive }) =>
+                cn(
+                  'rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                  isActive
+                    ? 'bg-primary/10 text-primary'
+                    : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                )
+              }
+            >
+              Administración
+            </NavLink>
+          )}
+
           {navigationItems.map((item) => (
             <NavLink
               key={item.to}
@@ -68,12 +101,25 @@ export function Navbar() {
         </nav>
 
         <div className="flex items-center gap-2">
-          <Button className="hidden sm:inline-flex" asChild>
-            <Link to="/login">
+          {isAuthenticated ? (
+            <Button
+              variant="outline"
+              onClick={handleLogout}
+            >
               <UserRound className="size-4" />
-              Iniciar sesión
-            </Link>
-          </Button>
+              Cerrar sesión
+            </Button>
+          ) : (
+            <Button
+              className="hidden sm:inline-flex"
+              asChild
+            >
+              <Link to="/login">
+                <UserRound className="size-4" />
+                Iniciar sesión
+              </Link>
+            </Button>
+          )}
 
           <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
             <SheetTrigger asChild>
@@ -96,6 +142,24 @@ export function Navbar() {
               </SheetHeader>
 
               <nav className="mt-8 flex flex-col gap-2">
+                {user?.rol === 'ADMIN' && (
+                  <NavLink
+                    to="/admin"
+                    onClick={() => setIsMenuOpen(false)}
+                    className={({ isActive }) =>
+                      cn(
+                        'flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium',
+                        isActive
+                          ? 'bg-primary text-primary-foreground'
+                          : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                      )
+                    }
+                  >
+                    <UserRound className="size-4" />
+                    Administración
+                  </NavLink>
+                )}
+
                 {navigationItems.map((item) => {
                   const Icon = item.icon
 
@@ -121,15 +185,28 @@ export function Navbar() {
                 })}
               </nav>
 
-              <Button className="mt-6 w-full" asChild>
-                <Link
-                  to="/login"
-                  onClick={() => setIsMenuOpen(false)}
+              {isAuthenticated ? (
+                <Button
+                  className="mt-6 w-full"
+                  onClick={() => {
+                    handleLogout()
+                    setIsMenuOpen(false)
+                  }}
                 >
                   <UserRound className="size-4" />
-                  Iniciar sesión
-                </Link>
-              </Button>
+                  Cerrar sesión
+                </Button>
+              ) : (
+                <Button className="mt-6 w-full" asChild>
+                  <Link
+                    to="/login"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <UserRound className="size-4" />
+                    Iniciar sesión
+                  </Link>
+                </Button>
+              )}
             </SheetContent>
           </Sheet>
         </div>

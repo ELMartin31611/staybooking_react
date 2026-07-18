@@ -1,7 +1,7 @@
-import type {
-  AuthTokens,
-  RefreshedTokens,
-} from '@/domain/entities/auth-tokens.entity'
+import type { AuthTokens } from '@/domain/entities/auth-tokens.entity'
+
+type RefreshedTokens = Pick<AuthTokens, 'access'> &
+  Partial<Pick<AuthTokens, 'refresh'>>
 
 const ACCESS_TOKEN_KEY = 'access_token'
 const REFRESH_TOKEN_KEY = 'refresh_token'

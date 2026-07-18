@@ -1,11 +1,6 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
-import { AlertCircle, Hotel } from 'lucide-react'
-import {
-  Link,
-  useLocation,
-  useNavigate,
-} from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 
 import { ApiException } from '@/domain/exceptions/api.exception'
 import { authUseCase } from '@/infrastructure/factories/auth.factory'
@@ -27,27 +22,46 @@ import { Input } from '@/presentation/components/ui/input'
 import { Label } from '@/presentation/components/ui/label'
 
 type LoginLocationState = {
-  from?: string
+  from?: string | { pathname?: string }
 }
 
-export default function LoginPlaceholderPage() {
+function resolveRedirect(
+  state: LoginLocationState | null,
+): string {
+  const from = state?.from
+
+  if (typeof from === 'string' && from.startsWith('/')) {
+    return from
+  }
+
+  if (
+    from &&
+    typeof from === 'object' &&
+    typeof from.pathname === 'string'
+  ) {
+    return from.pathname
+  }
+
+  return '/perfil'
+}
+
+export default function LoginPage() {
   const location = useLocation()
   const navigate = useNavigate()
 
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [errorMessage, setErrorMessage] =
-    useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
 
-  async function handleLogin(
+  async function handleSubmit(
     event: FormEvent<HTMLFormElement>,
   ) {
     event.preventDefault()
 
     try {
-      setIsSubmitting(true)
-      setErrorMessage(null)
+      setLoading(true)
+      setError('')
 
       const tokens = await authUseCase.login({
         username: username.trim(),
@@ -59,111 +73,86 @@ export default function LoginPlaceholderPage() {
       const profile = await authUseCase.getProfile()
       localUserStorage.saveUser(profile)
 
-      const state =
-        location.state as LoginLocationState | null
-
-      const destination =
-        state?.from?.startsWith('/')
-          ? state.from
-          : '/perfil'
-
-      navigate(destination, { replace: true })
-    } catch (error: unknown) {
+      navigate(
+        resolveRedirect(
+          location.state as LoginLocationState | null,
+        ),
+        { replace: true },
+      )
+    } catch (caughtError: unknown) {
       localTokenStorage.clearTokens()
       localUserStorage.clearUser()
 
-      if (error instanceof ApiException) {
-        setErrorMessage(error.message)
+      if (caughtError instanceof ApiException) {
+        setError(caughtError.message)
       } else {
-        setErrorMessage(
-          'No fue posible iniciar sesión. Inténtalo nuevamente.',
-        )
+        setError('No se pudo iniciar sesión.')
       }
     } finally {
-      setIsSubmitting(false)
+      setLoading(false)
     }
   }
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-muted/40 px-4">
-      <Card className="w-full max-w-md">
+      <Card className="w-full max-w-md shadow-xl">
         <CardHeader className="text-center">
-          <div className="mx-auto mb-3 flex size-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
-            <Hotel className="size-6" />
-          </div>
-
           <CardTitle className="text-2xl">
-            Iniciar sesión
+            Bienvenido a StayBooking
           </CardTitle>
 
           <CardDescription>
-            Ingresa tus credenciales para continuar.
+            Ingresa con tu usuario para continuar.
           </CardDescription>
         </CardHeader>
 
         <CardContent>
-          <form
-            className="space-y-4"
-            onSubmit={handleLogin}
-          >
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="username">
-                Nombre de usuario
-              </Label>
+              <Label htmlFor="username">Usuario</Label>
 
               <Input
                 id="username"
                 name="username"
-                type="text"
                 autoComplete="username"
-                placeholder="Nombre de usuario"
                 value={username}
                 onChange={(event) =>
                   setUsername(event.target.value)
                 }
-                disabled={isSubmitting}
+                disabled={loading}
                 required
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">
-                Contraseña
-              </Label>
+              <Label htmlFor="password">Contraseña</Label>
 
               <Input
                 id="password"
                 name="password"
                 type="password"
                 autoComplete="current-password"
-                placeholder="********"
                 value={password}
                 onChange={(event) =>
                   setPassword(event.target.value)
                 }
-                disabled={isSubmitting}
+                disabled={loading}
                 required
               />
             </div>
 
-            {errorMessage && (
+            {error && (
               <Alert variant="destructive">
-                <AlertCircle className="size-4" />
-
-                <AlertDescription>
-                  {errorMessage}
-                </AlertDescription>
+                <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
 
             <Button
               className="w-full"
               type="submit"
-              disabled={isSubmitting}
+              disabled={loading}
             >
-              {isSubmitting
-                ? 'Ingresando...'
-                : 'Ingresar'}
+              {loading ? 'Ingresando...' : 'Iniciar sesión'}
             </Button>
           </form>
 
@@ -174,6 +163,16 @@ export default function LoginPlaceholderPage() {
           >
             <Link to="/">Volver al inicio</Link>
           </Button>
+
+          <p className="mt-4 text-center text-sm text-muted-foreground">
+            ¿No tienes cuenta?{' '}
+            <Link
+              to="/register"
+              className="text-primary hover:underline"
+            >
+              Regístrate
+            </Link>
+          </p>
         </CardContent>
       </Card>
     </main>
