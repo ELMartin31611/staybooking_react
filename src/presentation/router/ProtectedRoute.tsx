@@ -14,10 +14,12 @@ export default function ProtectedRoute({
   const location = useLocation()
 
   if (!isAuthenticated) {
+    const from = `${location.pathname}${location.search}${location.hash}`
+
     return (
       <Navigate
         to="/login"
-        state={{ from: location }}
+        state={{ from }}
         replace
       />
     )

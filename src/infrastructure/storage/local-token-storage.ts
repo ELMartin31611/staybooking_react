@@ -1,7 +1,7 @@
-import type {
-  AuthTokens,
-  RefreshedTokens,
-} from '@/domain/entities/auth-tokens.entity'
+import type { AuthTokens } from '@/domain/entities/auth-tokens.entity'
+
+type RefreshedTokens = Pick<AuthTokens, 'access_token'> &
+  Partial<Pick<AuthTokens, 'refresh_token'>>
 
 const ACCESS_TOKEN_KEY = 'access_token'
 const REFRESH_TOKEN_KEY = 'refresh_token'
@@ -16,15 +16,15 @@ export const localTokenStorage = {
   },
 
   saveTokens(tokens: AuthTokens): void {
-    localStorage.setItem(ACCESS_TOKEN_KEY, tokens.access)
-    localStorage.setItem(REFRESH_TOKEN_KEY, tokens.refresh)
+    localStorage.setItem(ACCESS_TOKEN_KEY, tokens.access_token)
+    localStorage.setItem(REFRESH_TOKEN_KEY, tokens.refresh_token)
   },
 
   updateTokens(tokens: RefreshedTokens): void {
-    localStorage.setItem(ACCESS_TOKEN_KEY, tokens.access)
+    localStorage.setItem(ACCESS_TOKEN_KEY, tokens.access_token)
 
-    if (tokens.refresh) {
-      localStorage.setItem(REFRESH_TOKEN_KEY, tokens.refresh)
+    if (tokens.refresh_token) {
+      localStorage.setItem(REFRESH_TOKEN_KEY, tokens.refresh_token)
     }
   },
 
