@@ -1,9 +1,6 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
-import {
-  Link,
-  useLocation,
-} from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 
 import { ApiException } from '@/domain/exceptions/api.exception'
 import { authUseCase } from '@/infrastructure/factories/auth.factory'
@@ -14,17 +11,6 @@ import {
   AlertDescription,
 } from '@/presentation/components/ui/alert'
 import { Button } from '@/presentation/components/ui/button'
-
-import {
-  Link,
-  useLocation,
-  useNavigate,
-} from 'react-router-dom'
-
-import { authUseCase } from '@/infrastructure/factories/auth.factory'
-import { localTokenStorage } from '@/infrastructure/storage/local-token-storage'
-import LoginForm from '@/presentation/components/auth/LoginForm'
-
 import {
   Card,
   CardContent,
@@ -39,12 +25,12 @@ type LoginLocationState = {
   from?: string | { pathname?: string }
 }
 
-function resolveRedirectFrom(
+function resolveRedirect(
   state: LoginLocationState | null,
 ): string {
   const from = state?.from
 
-  if (typeof from === 'string') {
+  if (typeof from === 'string' && from.startsWith('/')) {
     return from
   }
 
@@ -61,14 +47,17 @@ function resolveRedirectFrom(
 
 export default function LoginPage() {
   const location = useLocation()
+  const navigate = useNavigate()
 
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault()
+  async function handleSubmit(
+    event: FormEvent<HTMLFormElement>,
+  ) {
+    event.preventDefault()
 
     try {
       setLoading(true)
@@ -81,24 +70,23 @@ export default function LoginPage() {
 
       localTokenStorage.saveTokens(tokens)
 
-      // Si el endpoint de perfil falla, no bloqueamos el acceso tras login exitoso.
-      try {
-        const profile = await authUseCase.getProfile()
-        localUserStorage.saveUser(profile)
-      } catch {
-        // Intencionalmente ignorado: ya tenemos tokens válidos.
-      }
+      const profile = await authUseCase.getProfile()
+      localUserStorage.saveUser(profile)
 
-      window.location.assign(
-        resolveRedirectFrom(
+      navigate(
+        resolveRedirect(
           location.state as LoginLocationState | null,
         ),
+        { replace: true },
       )
-    } catch (error: unknown) {
-      if (error instanceof ApiException) {
-        setError(error.message)
+    } catch (caughtError: unknown) {
+      localTokenStorage.clearTokens()
+      localUserStorage.clearUser()
+
+      if (caughtError instanceof ApiException) {
+        setError(caughtError.message)
       } else {
-        setError('No se pudo iniciar sesión')
+        setError('No se pudo iniciar sesión.')
       }
     } finally {
       setLoading(false)
@@ -107,56 +95,14 @@ export default function LoginPage() {
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-muted/40 px-4">
-      <Card className="w-full max-w-md">
+      <Card className="w-full max-w-md shadow-xl">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl">
-            Iniciar sesión
-          </CardTitle>
-
-          <CardDescription>
-            Ingresa con tu cuenta para continuar.
-=======
-
-type LoginLocationState = {
-  from?: string
-}
-
-export default function LoginPage() {
-  const navigate = useNavigate()
-  const location = useLocation()
-
-  async function handleLogin(
-    email: string,
-    password: string,
-  ) {
-    const tokens = await authUseCase.login({
-      email,
-      password,
-    })
-
-    localTokenStorage.saveTokens(tokens)
-
-    await authUseCase.getProfile()
-
-    navigate(
-      (location.state as LoginLocationState | null)
-        ?.from ?? '/perfil',
-      {
-        replace: true,
-      },
-    )
-  }
-
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-muted/30 px-4">
-      <Card className="w-full max-w-md shadow-xl">
-        <CardHeader>
-          <CardTitle className="text-center text-2xl">
             Bienvenido a StayBooking
           </CardTitle>
 
-          <CardDescription className="text-center">
-            Ingresa para gestionar tus reservas
+          <CardDescription>
+            Ingresa con tu usuario para continuar.
           </CardDescription>
         </CardHeader>
 
@@ -167,10 +113,12 @@ export default function LoginPage() {
 
               <Input
                 id="username"
-                type="text"
-                placeholder="Tu usuario"
+                name="username"
+                autoComplete="username"
                 value={username}
-                onChange={(event) => setUsername(event.target.value)}
+                onChange={(event) =>
+                  setUsername(event.target.value)
+                }
                 disabled={loading}
                 required
               />
@@ -181,10 +129,13 @@ export default function LoginPage() {
 
               <Input
                 id="password"
+                name="password"
                 type="password"
-                placeholder="********"
+                autoComplete="current-password"
                 value={password}
-                onChange={(event) => setPassword(event.target.value)}
+                onChange={(event) =>
+                  setPassword(event.target.value)
+                }
                 disabled={loading}
                 required
               />
@@ -196,27 +147,34 @@ export default function LoginPage() {
               </Alert>
             )}
 
-            <Button className="w-full" type="submit" disabled={loading}>
+            <Button
+              className="w-full"
+              type="submit"
+              disabled={loading}
+            >
               {loading ? 'Ingresando...' : 'Iniciar sesión'}
             </Button>
           </form>
 
-          <Button className="mt-3 w-full" variant="outline" asChild>
+          <Button
+            className="mt-3 w-full"
+            variant="outline"
+            asChild
+          >
             <Link to="/">Volver al inicio</Link>
           </Button>
 
-          <LoginForm onSubmit={handleLogin} />
-
           <p className="mt-4 text-center text-sm text-muted-foreground">
             ¿No tienes cuenta?{' '}
-            <Link to="/register" className="text-primary hover:underline">
+            <Link
+              to="/register"
+              className="text-primary hover:underline"
+            >
               Regístrate
             </Link>
           </p>
         </CardContent>
       </Card>
     </main>
-
-    </div>
   )
 }

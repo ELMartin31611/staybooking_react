@@ -1,5 +1,5 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
-
+import { localUserStorage } from '@/infrastructure/storage/local-user-storage'
 import { localTokenStorage } from '@/infrastructure/storage/local-token-storage'
 import {
   AdminLayout,
@@ -17,11 +17,12 @@ import SelectedReservationPage from '@/presentation/pages/reservations/SelectedR
 import ComingSoonPage from '@/presentation/pages/public/ComingSoonPage'
 import HomePage from '@/presentation/pages/public/HomePage'
 
+
 import ProtectedRoute from './ProtectedRoute'
 
 export default function AppRouter() {
   const isAuthenticated = localTokenStorage.hasTokens()
-  const userRole: string | null = null
+  const userRole = localUserStorage.getUser()?.rol ?? null
 
   return (
     <BrowserRouter>
@@ -61,7 +62,6 @@ export default function AppRouter() {
         </Route>
 
         <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/403" element={<ForbiddenPage />} />
 
