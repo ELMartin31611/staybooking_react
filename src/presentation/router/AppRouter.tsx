@@ -7,7 +7,8 @@ import {
   PublicLayout,
 } from '@/presentation/components/layout'
 import AdminPlaceholderPage from '@/presentation/pages/admin/AdminPlaceholderPage'
-import LoginPlaceholderPage from '@/presentation/pages/auth/LoginPlaceholderPage'
+import LoginPage from '@/presentation/pages/auth/LoginPage'
+import RegisterPage from '@/presentation/pages/auth/RegisterPage'
 import ForbiddenPage from '@/presentation/pages/ForbiddenPage'
 import NotFoundPage from '@/presentation/pages/NotFoundPage'
 import PrivatePlaceholderPage from '@/presentation/pages/profile/PrivatePlaceholderPage'
@@ -57,7 +58,8 @@ export default function AppRouter() {
           />
         </Route>
 
-        <Route path="/login" element={<LoginPlaceholderPage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
         <Route path="/403" element={<ForbiddenPage />} />
 
         <Route
