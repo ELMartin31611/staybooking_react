@@ -13,4 +13,8 @@ export interface AuthRepository {
   ): Promise<void>
 
   getProfile(): Promise<UserProfile>
+  
+  updateProfile(
+    data: Partial<UserProfile>,
+  ): Promise<UserProfile>
 }

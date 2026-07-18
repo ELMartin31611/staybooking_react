@@ -8,6 +8,11 @@ export interface CustomerRepository {
 
   getCustomer(): Promise<Customer>
 
+  updateCustomer(
+    id: number,
+    data: Partial<Customer>,
+  ): Promise<Customer>
+
   getAddresses(): Promise<Address[]>
 
   getDocuments(): Promise<Document[]>

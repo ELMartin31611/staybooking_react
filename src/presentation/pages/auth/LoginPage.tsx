@@ -8,6 +8,7 @@ import {
 import { ApiException } from '@/domain/exceptions/api.exception'
 import { authUseCase } from '@/infrastructure/factories/auth.factory'
 import { localTokenStorage } from '@/infrastructure/storage/local-token-storage'
+import { localUserStorage } from '@/infrastructure/storage/local-user-storage'
 import {
   Alert,
   AlertDescription,
@@ -71,7 +72,8 @@ export default function LoginPage() {
 
       // Si el endpoint de perfil falla, no bloqueamos el acceso tras login exitoso.
       try {
-        await authUseCase.getProfile()
+        const profile = await authUseCase.getProfile()
+        localUserStorage.saveUser(profile)
       } catch {
         // Intencionalmente ignorado: ya tenemos tokens válidos.
       }

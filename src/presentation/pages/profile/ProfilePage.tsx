@@ -5,6 +5,9 @@ import type { Customer } from '@/domain/entities/customer.entity'
 import type { Document } from '@/domain/entities/document.entity'
 import type { UserProfile } from '@/domain/entities/user-profile.entity'
 
+import EditProfileForm from '@/presentation/components/profile/EditProfileForm'
+import { ProfileImageUpload } from '@/presentation/components/profile/ProfileImageUpload'
+import { authUseCase } from '@/infrastructure/factories/auth.factory'
 import { customerUseCase } from '@/infrastructure/factories/customer.factory'
 
 import { Loader } from '@/presentation/components/common/Loader'
@@ -31,6 +34,9 @@ export default function ProfilePage() {
   const [loading, setLoading] =
     useState(true)
 
+  const [editing, setEditing] =
+    useState(false)
+
   useEffect(() => {
     async function loadData() {
       try {
@@ -40,7 +46,7 @@ export default function ProfilePage() {
           addressData,
           documentData,
         ] = await Promise.all([
-          customerUseCase.getProfile(),
+          authUseCase.getProfile(),
           customerUseCase.getCustomer(),
           customerUseCase.getAddresses(),
           customerUseCase.getDocuments(),
@@ -58,6 +64,27 @@ export default function ProfilePage() {
     loadData()
   }, [])
 
+  async function handleSaveProfile(
+    profileData: Partial<UserProfile>,
+    customerData: Partial<Customer>,
+  ) {
+    if (!profile) {
+      return
+    }
+
+    await authUseCase.updateProfile(profileData)
+
+    if (customer?.id) {
+      await customerUseCase.updateCustomer(
+        customer.id,
+        customerData,
+      )
+    }
+
+    setEditing(false)
+    window.location.reload()
+  }
+
   if (loading) {
     return <Loader />
   }
@@ -69,10 +96,26 @@ export default function ProfilePage() {
           Mi Perfil
         </h1>
 
+        <button
+          className="mt-3 rounded-lg bg-primary px-4 py-2 text-white"
+          onClick={() => setEditing(!editing)}
+        >
+          {editing ? 'Cancelar' : 'Editar perfil'}
+        </button>
+
         <p className="text-muted-foreground">
           Información de tu cuenta y datos personales
         </p>
       </div>
+
+      {editing && profile && customer && (
+        <EditProfileForm
+          profile={profile}
+          customer={customer}
+          onSubmit={handleSaveProfile}
+          onCancel={() => setEditing(false)}
+        />
+      )}
 
       <Card>
         <CardHeader>
@@ -82,6 +125,13 @@ export default function ProfilePage() {
         </CardHeader>
 
         <CardContent className="space-y-2">
+          <ProfileImageUpload
+            currentImage={profile?.foto_url}
+            onSuccess={() => {
+              window.location.reload()
+            }}
+          />
+
           <p>
             <b>Usuario:</b> {profile?.username}
           </p>

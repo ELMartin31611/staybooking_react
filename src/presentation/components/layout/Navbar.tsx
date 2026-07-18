@@ -14,6 +14,7 @@ import {
 } from 'react-router-dom'
 
 import { localTokenStorage } from '@/infrastructure/storage/local-token-storage'
+import { localUserStorage } from '@/infrastructure/storage/local-user-storage'
 import { Button } from '@/presentation/components/ui/button'
 import {
   Sheet,
@@ -41,9 +42,11 @@ export function Navbar() {
   const navigate = useNavigate()
   const isAuthenticated =
     localTokenStorage.hasTokens()
+  const user = localUserStorage.getUser()
 
   function handleLogout() {
     localTokenStorage.clearTokens()
+    localUserStorage.clearUser()
     navigate('/')
     window.location.reload()
   }
@@ -62,6 +65,22 @@ export function Navbar() {
         </Link>
 
         <nav className="hidden items-center gap-1 lg:flex">
+          {user?.rol === 'ADMIN' && (
+            <NavLink
+              to="/admin"
+              className={({ isActive }) =>
+                cn(
+                  'rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                  isActive
+                    ? 'bg-primary/10 text-primary'
+                    : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                )
+              }
+            >
+              Administración
+            </NavLink>
+          )}
+
           {navigationItems.map((item) => (
             <NavLink
               key={item.to}
@@ -123,6 +142,24 @@ export function Navbar() {
               </SheetHeader>
 
               <nav className="mt-8 flex flex-col gap-2">
+                {user?.rol === 'ADMIN' && (
+                  <NavLink
+                    to="/admin"
+                    onClick={() => setIsMenuOpen(false)}
+                    className={({ isActive }) =>
+                      cn(
+                        'flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium',
+                        isActive
+                          ? 'bg-primary text-primary-foreground'
+                          : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                      )
+                    }
+                  >
+                    <UserRound className="size-4" />
+                    Administración
+                  </NavLink>
+                )}
+
                 {navigationItems.map((item) => {
                   const Icon = item.icon
 

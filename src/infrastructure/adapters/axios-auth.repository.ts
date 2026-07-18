@@ -40,4 +40,16 @@ export class AxiosAuthRepository
 
     return data
   }
+
+  async updateProfile(
+    data: Partial<UserProfile>,
+  ): Promise<UserProfile> {
+    const { data: profile } =
+      await apiClient.patch<UserProfile>(
+        apiConfig.endpoints.auth.profile,
+        data,
+      )
+
+    return profile
+  }
 }
