@@ -12,7 +12,9 @@ import {
 import AdminPlaceholderPage from '@/presentation/pages/admin/AdminPlaceholderPage'
 import LoginPage from '@/presentation/pages/auth/LoginPage'
 import RegisterPage from '@/presentation/pages/auth/RegisterPage'
+import HotelDetailPage from '@/presentation/pages/catalog/HotelDetailPage'
 import HotelsCatalogPage from '@/presentation/pages/catalog/HotelsCatalogPage'
+import RoomDetailPage from '@/presentation/pages/catalog/RoomDetailPage'
 import ForbiddenPage from '@/presentation/pages/ForbiddenPage'
 import NotFoundPage from '@/presentation/pages/NotFoundPage'
 import ProfilePage from '@/presentation/pages/profile/ProfilePage'
@@ -40,12 +42,12 @@ export default function AppRouter() {
 
           <Route
             path="hoteles/:hotelId"
-            element={
-              <ComingSoonPage
-                title="Detalle del hotel"
-                description="Consulta la información, habitaciones y servicios disponibles."
-              />
-            }
+            element={<HotelDetailPage />}
+          />
+
+          <Route
+            path="habitaciones/:roomId"
+            element={<RoomDetailPage />}
           />
 
           <Route
