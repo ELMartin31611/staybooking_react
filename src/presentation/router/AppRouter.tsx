@@ -10,6 +10,7 @@ import {
   PublicLayout,
 } from '@/presentation/components/layout'
 import AdminPlaceholderPage from '@/presentation/pages/admin/AdminPlaceholderPage'
+import AdminRatesPage from '@/presentation/pages/admin/AdminRatesPage'
 import LoginPage from '@/presentation/pages/auth/LoginPage'
 import RegisterPage from '@/presentation/pages/auth/RegisterPage'
 import HotelsCatalogPage from '@/presentation/pages/catalog/HotelsCatalogPage'
@@ -107,6 +108,11 @@ export default function AppRouter() {
             <Route
               index
               element={<AdminPlaceholderPage />}
+            />
+
+            <Route
+              path="tarifas"
+              element={<AdminRatesPage />}
             />
 
             <Route
