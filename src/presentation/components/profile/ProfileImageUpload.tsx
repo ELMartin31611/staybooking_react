@@ -118,11 +118,6 @@ export function ProfileImageUpload({
       setError('')
       setSuccess('')
 
-      /*
-       * No se establece Content-Type manualmente.
-       * Axios genera automáticamente multipart/form-data
-       * incluyendo el boundary requerido por Django.
-       */
       const { data } = await apiClient.patch<UserProfile>(
         apiConfig.endpoints.auth.profile,
         formData,
@@ -149,30 +144,31 @@ export function ProfileImageUpload({
   }
 
   return (
-    <div className="space-y-4 rounded-xl border bg-muted/30 p-4">
-      <div className="flex flex-col items-center gap-3 sm:flex-row sm:items-center">
-        <Avatar className="size-24" size="lg">
+    <div className="space-y-5 rounded-2xl border bg-muted/20 p-5 sm:p-7">
+      <div className="flex flex-col items-center text-center">
+        <Avatar className="size-40 border-4 border-background shadow-xl ring-2 ring-primary/20 sm:size-48">
           <AvatarImage
             src={previewUrl ?? currentImage ?? undefined}
             alt="Foto de perfil"
+            className="object-cover object-center"
           />
 
-          <AvatarFallback>
-            <UserRound className="size-8" />
+          <AvatarFallback className="bg-muted">
+            <UserRound className="size-16 text-muted-foreground" />
           </AvatarFallback>
         </Avatar>
 
-        <div className="space-y-2 text-center sm:text-left">
-          <p className="text-sm font-medium">
+        <div className="mt-5 space-y-1">
+          <h3 className="text-lg font-semibold">
             Foto de perfil
-          </p>
+          </h3>
 
-          <p className="text-xs text-muted-foreground">
+          <p className="text-sm text-muted-foreground">
             JPG, PNG o WebP. Máximo 2 MB.
           </p>
 
           {file && (
-            <p className="text-xs text-primary">
+            <p className="pt-1 text-sm font-medium text-primary">
               Seleccionada: {file.name}
             </p>
           )}
@@ -197,8 +193,8 @@ export function ProfileImageUpload({
         </Alert>
       )}
 
-      <div className="flex flex-col gap-2 sm:flex-row">
-        <label className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-input bg-background px-4 py-2 text-sm font-medium hover:bg-muted">
+      <div className="flex flex-col justify-center gap-3 sm:flex-row">
+        <label className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-input bg-background px-5 py-2.5 text-sm font-medium transition-colors hover:bg-muted">
           <Camera className="size-4" />
           Seleccionar imagen
 
@@ -214,10 +210,13 @@ export function ProfileImageUpload({
 
         <Button
           type="button"
+          className="px-5"
           onClick={handleUpload}
           disabled={!file || loading}
         >
-          {loading ? 'Subiendo...' : 'Guardar foto'}
+          {loading
+            ? 'Subiendo...'
+            : 'Guardar foto'}
         </Button>
       </div>
     </div>
