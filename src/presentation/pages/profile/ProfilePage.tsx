@@ -42,7 +42,10 @@ export default function ProfilePage() {
     useState(false)
 
   const [addressLine, setAddressLine] = useState('')
+  const [addressProvince, setAddressProvince] = useState('')
   const [addressCity, setAddressCity] = useState('')
+  const [addressSecondary, setAddressSecondary] = useState('')
+  const [addressPostalCode, setAddressPostalCode] = useState('')
   const [addressReference, setAddressReference] = useState('')
   const [savingAddress, setSavingAddress] = useState(false)
   const [addressFeedback, setAddressFeedback] = useState('')
@@ -151,10 +154,11 @@ export default function ProfilePage() {
 
     if (
       !addressLine.trim()
+      || !addressProvince.trim()
       || !addressCity.trim()
     ) {
       setAddressFeedback(
-        'Completa calle principal y ciudad para guardar la dirección.',
+        'Completa calle principal, provincia y ciudad para guardar la dirección.',
       )
       return
     }
@@ -166,12 +170,12 @@ export default function ProfilePage() {
       const createdAddress =
         await customerUseCase.createAddress({
           cliente: customer.id,
-          provincia: '',
+          provincia: addressProvince.trim(),
           ciudad: addressCity.trim(),
           calle_principal: addressLine.trim(),
-          calle_secundaria: null,
+          calle_secundaria: addressSecondary.trim() || null,
           referencia: addressReference.trim() || null,
-          codigo_postal: null,
+          codigo_postal: addressPostalCode.trim() || null,
           es_principal: addresses.length === 0,
         })
 
@@ -180,7 +184,10 @@ export default function ProfilePage() {
         ...current,
       ])
       setAddressLine('')
+      setAddressProvince('')
       setAddressCity('')
+      setAddressSecondary('')
+      setAddressPostalCode('')
       setAddressReference('')
       setAddressFeedback(
         'Dirección guardada correctamente.',
@@ -394,7 +401,7 @@ export default function ProfilePage() {
             <div className="mt-3 grid gap-3 sm:grid-cols-2">
               <div className="space-y-2 sm:col-span-2">
                 <Label htmlFor="address_line">
-                  Dirección
+                  Calle principal
                 </Label>
 
                 <Input
@@ -403,6 +410,22 @@ export default function ProfilePage() {
                   value={addressLine}
                   onChange={(event) =>
                     setAddressLine(event.target.value)
+                  }
+                  disabled={savingAddress}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="address_province">
+                  Provincia
+                </Label>
+
+                <Input
+                  id="address_province"
+                  placeholder="Bolívar"
+                  value={addressProvince}
+                  onChange={(event) =>
+                    setAddressProvince(event.target.value)
                   }
                   disabled={savingAddress}
                 />
@@ -425,6 +448,38 @@ export default function ProfilePage() {
               </div>
 
               <div className="space-y-2">
+                <Label htmlFor="address_secondary">
+                  Calle secundaria (opcional)
+                </Label>
+
+                <Input
+                  id="address_secondary"
+                  placeholder="Carrera 10"
+                  value={addressSecondary}
+                  onChange={(event) =>
+                    setAddressSecondary(event.target.value)
+                  }
+                  disabled={savingAddress}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="address_postal_code">
+                  Código postal (opcional)
+                </Label>
+
+                <Input
+                  id="address_postal_code"
+                  placeholder="130001"
+                  value={addressPostalCode}
+                  onChange={(event) =>
+                    setAddressPostalCode(event.target.value)
+                  }
+                  disabled={savingAddress}
+                />
+              </div>
+
+              <div className="space-y-2 sm:col-span-2">
                 <Label htmlFor="address_reference">
                   Referencia (opcional)
                 </Label>
