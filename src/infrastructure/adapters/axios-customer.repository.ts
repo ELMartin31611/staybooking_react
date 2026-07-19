@@ -33,6 +33,23 @@ function toArray<T>(value: unknown): T[] {
   return []
 }
 
+function getPerfilId(customer: Customer): number | null {
+  if (typeof customer.perfil === 'number') {
+    return customer.perfil
+  }
+
+  if (
+    customer.perfil
+    && typeof customer.perfil === 'object'
+    && 'id' in (customer.perfil as object)
+  ) {
+    const nestedId = Number((customer.perfil as { id?: unknown }).id)
+    return Number.isFinite(nestedId) ? nestedId : null
+  }
+
+  return null
+}
+
 export class AxiosCustomerRepository
   implements CustomerRepository
 {
@@ -48,14 +65,40 @@ export class AxiosCustomerRepository
 
   }
 
-  async getCustomer(): Promise<Customer> {
+  async getCustomer(profileId: number): Promise<Customer | null> {
 
     const { data } =
-      await apiClient.get<Customer>(
-        apiConfig.endpoints.customers.customers
+      await apiClient.get<unknown>(
+        apiConfig.endpoints.customers.customers,
+        {
+          params: {
+            perfil: profileId,
+          },
+        },
       )
 
-    return data
+    const customers = toArray<Customer>(data)
+
+    const match = customers.find((customer) => {
+      const perfilId = getPerfilId(customer)
+      return perfilId === profileId
+    })
+
+    return match ?? customers[0] ?? null
+
+  }
+
+  async createCustomer(
+    data: Omit<Customer, 'id' | 'created_at' | 'updated_at'>,
+  ): Promise<Customer> {
+
+    const { data: customer } =
+      await apiClient.post<Customer>(
+        apiConfig.endpoints.customers.customers,
+        data,
+      )
+
+    return customer
 
   }
 
@@ -74,14 +117,25 @@ export class AxiosCustomerRepository
 
   }
 
-  async getAddresses(): Promise<Address[]> {
+  async getAddresses(customerId?: number): Promise<Address[]> {
 
     const { data } =
       await apiClient.get<unknown>(
-        apiConfig.endpoints.customers.addresses
+        apiConfig.endpoints.customers.addresses,
+        {
+          params: customerId
+            ? { cliente: customerId }
+            : undefined,
+        },
       )
 
-    return toArray<Address>(data)
+    const addresses = toArray<Address>(data)
+
+    if (!customerId) {
+      return addresses
+    }
+
+    return addresses.filter((address) => address.cliente === customerId)
 
   }
 
@@ -99,14 +153,25 @@ export class AxiosCustomerRepository
 
   }
 
-  async getDocuments(): Promise<Document[]> {
+  async getDocuments(customerId?: number): Promise<Document[]> {
 
     const { data } =
       await apiClient.get<unknown>(
-        apiConfig.endpoints.customers.documents
+        apiConfig.endpoints.customers.documents,
+        {
+          params: customerId
+            ? { cliente: customerId }
+            : undefined,
+        },
       )
 
-    return toArray<Document>(data)
+    const documents = toArray<Document>(data)
+
+    if (!customerId) {
+      return documents
+    }
+
+    return documents.filter((document) => document.cliente === customerId)
 
   }
 

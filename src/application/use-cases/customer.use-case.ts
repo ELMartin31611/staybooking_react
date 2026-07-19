@@ -13,8 +13,17 @@ export class CustomerUseCase {
     return this.repository.getProfile()
   }
 
-  getCustomer() {
-    return this.repository.getCustomer()
+  getCustomer(profileId: number) {
+    return this.repository.getCustomer(profileId)
+  }
+
+  createCustomer(
+    data: Omit<
+      import('@/domain/entities/customer.entity').Customer,
+      'id' | 'created_at' | 'updated_at'
+    >,
+  ) {
+    return this.repository.createCustomer(data)
   }
 
   updateCustomer(
@@ -27,8 +36,8 @@ export class CustomerUseCase {
     )
   }
 
-  getAddresses() {
-    return this.repository.getAddresses()
+  getAddresses(customerId?: number) {
+    return this.repository.getAddresses(customerId)
   }
 
   createAddress(
@@ -37,8 +46,8 @@ export class CustomerUseCase {
     return this.repository.createAddress(data)
   }
 
-  getDocuments() {
-    return this.repository.getDocuments()
+  getDocuments(customerId?: number) {
+    return this.repository.getDocuments(customerId)
   }
 
   createDocument(

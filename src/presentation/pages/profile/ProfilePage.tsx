@@ -4,6 +4,7 @@ import type { Address } from '@/domain/entities/address.entity'
 import type { Customer } from '@/domain/entities/customer.entity'
 import type { Document } from '@/domain/entities/document.entity'
 import type { UserProfile } from '@/domain/entities/user-profile.entity'
+import { ApiException } from '@/domain/exceptions/api.exception'
 
 import EditProfileForm from '@/presentation/components/profile/EditProfileForm'
 import { ProfileImageUpload } from '@/presentation/components/profile/ProfileImageUpload'
@@ -42,34 +43,39 @@ export default function ProfilePage() {
     useState(false)
 
   const [addressLine, setAddressLine] = useState('')
+  const [addressProvince, setAddressProvince] = useState('')
   const [addressCity, setAddressCity] = useState('')
-  const [addressCountry, setAddressCountry] = useState('')
+  const [addressSecondary, setAddressSecondary] = useState('')
+  const [addressPostalCode, setAddressPostalCode] = useState('')
   const [addressReference, setAddressReference] = useState('')
   const [savingAddress, setSavingAddress] = useState(false)
   const [addressFeedback, setAddressFeedback] = useState('')
+  const [profileFeedback, setProfileFeedback] = useState('')
+  const [profileError, setProfileError] = useState('')
 
   const [documentType, setDocumentType] = useState('CEDULA')
   const [documentNumber, setDocumentNumber] = useState('')
-  const [documentFile, setDocumentFile] = useState('')
+  const [documentFileUrl, setDocumentFileUrl] = useState('')
+  const [documentIssueDate, setDocumentIssueDate] = useState('')
+  const [documentExpiryDate, setDocumentExpiryDate] = useState('')
   const [savingDocument, setSavingDocument] = useState(false)
   const [documentFeedback, setDocumentFeedback] = useState('')
 
   useEffect(() => {
     async function loadData() {
       try {
-        const [
-          profileData,
-          customerData,
-          addressData,
-          documentData,
-        ] = await Promise.all([
-          authUseCase.getProfile(),
-          customerUseCase.getCustomer(),
-          customerUseCase.getAddresses(),
-          customerUseCase.getDocuments(),
+        const profileData = await authUseCase.getProfile()
+        const customerData = await customerUseCase.getCustomer(
+          profileData.id,
+        )
+
+        const [addressData, documentData] = await Promise.all([
+          customerUseCase.getAddresses(customerData?.id),
+          customerUseCase.getDocuments(customerData?.id),
         ])
 
         setProfile(profileData)
+        localUserStorage.saveUser(profileData)
         setCustomer(customerData)
         setAddresses(addressData)
         setDocuments(documentData)
@@ -89,38 +95,180 @@ export default function ProfilePage() {
       return
     }
 
-    const updatedProfile = await authUseCase.updateProfile(
-      profileData,
-    )
+    setProfileFeedback('')
+    setProfileError('')
 
-    setProfile(updatedProfile)
-    localUserStorage.saveUser(updatedProfile)
+    try {
+      const requestedEmail = profileData.email?.trim() ?? ''
+      const requestedAltEmail = customerData.correo_alternativo?.trim() ?? ''
+      const profilePayload: Partial<UserProfile> = {
+        username: profileData.username?.trim(),
+        email: profileData.email?.trim(),
+        telefono: profileData.telefono ?? null,
+      }
 
-    if (customer?.id) {
-      const updatedCustomer =
-        await customerUseCase.updateCustomer(
-          customer.id,
-          customerData,
+      const updatedProfile = await authUseCase.updateProfile(profilePayload)
+
+      setProfile(updatedProfile)
+      localUserStorage.saveUser(updatedProfile)
+
+      // first_name / last_name are optional by API contract in this backend.
+      if (profileData.first_name?.trim() || profileData.last_name?.trim()) {
+        try {
+          const updatedProfileWithNames = await authUseCase.updateProfile({
+            first_name: profileData.first_name?.trim(),
+            last_name: profileData.last_name?.trim(),
+          })
+
+          setProfile(updatedProfileWithNames)
+          localUserStorage.saveUser(updatedProfileWithNames)
+        } catch {
+          setProfileFeedback(
+            'Perfil guardado. Nombre y apellido no se actualizaron porque esta API no los soporta en /perfil/.',
+          )
+        }
+      }
+
+      const requiredCustomerFieldsCompleted =
+        Boolean(customerData.cedula?.trim())
+        && Boolean(customerData.nombres?.trim())
+        && Boolean(customerData.apellidos?.trim())
+        && Boolean(customerData.nacionalidad?.trim())
+
+      const customerPatch: Partial<Customer> = {}
+
+      if (customerData.cedula?.trim()) {
+        customerPatch.cedula = customerData.cedula.trim()
+      }
+
+      if (customerData.nombres?.trim()) {
+        customerPatch.nombres = customerData.nombres.trim()
+      }
+
+      if (customerData.apellidos?.trim()) {
+        customerPatch.apellidos = customerData.apellidos.trim()
+      }
+
+      if (customerData.nacionalidad?.trim()) {
+        customerPatch.nacionalidad = customerData.nacionalidad.trim()
+      }
+
+      if (customerData.fecha_nacimiento !== undefined) {
+        customerPatch.fecha_nacimiento = customerData.fecha_nacimiento
+      }
+
+      if (customerData.genero !== undefined) {
+        customerPatch.genero = customerData.genero
+      }
+
+      if (customerData.correo_alternativo !== undefined) {
+        customerPatch.correo_alternativo = customerData.correo_alternativo
+      }
+
+      if (customer?.id) {
+        if (Object.keys(customerPatch).length > 0) {
+          await customerUseCase.updateCustomer(
+            customer.id,
+            customerPatch,
+          )
+        }
+      } else {
+        if (!requiredCustomerFieldsCompleted) {
+          setEditing(false)
+          setProfileFeedback(
+            'Perfil guardado. Para crear el cliente completa cédula, nombres, apellidos y nacionalidad.',
+          )
+          return
+        }
+
+        await customerUseCase.createCustomer({
+          perfil: updatedProfile.id,
+          cedula: customerData.cedula!,
+          nombres: customerData.nombres!,
+          apellidos: customerData.apellidos!,
+          fecha_nacimiento: customerData.fecha_nacimiento ?? null,
+          genero: customerData.genero ?? null,
+          nacionalidad: customerData.nacionalidad!,
+          correo_alternativo: customerData.correo_alternativo ?? null,
+        })
+      }
+
+      const latestProfile = await authUseCase.getProfile()
+      const refreshedCustomer = await customerUseCase.getCustomer(
+        latestProfile.id,
+      )
+
+      setProfile(latestProfile)
+      localUserStorage.saveUser(latestProfile)
+      setCustomer(refreshedCustomer)
+
+      const persistedEmail = latestProfile.email?.trim() ?? ''
+      const persistedAltEmail = refreshedCustomer?.correo_alternativo?.trim() ?? ''
+      const emailMismatch = requestedEmail && persistedEmail !== requestedEmail
+      const altEmailMismatch =
+        requestedAltEmail && persistedAltEmail !== requestedAltEmail
+
+      if (
+        emailMismatch || altEmailMismatch
+      ) {
+        const messages: string[] = []
+
+        if (emailMismatch) {
+          messages.push(
+            `Correo principal: enviaste "${requestedEmail}" y backend devolvio "${persistedEmail || 'vacio'}".`,
+          )
+        }
+
+        if (altEmailMismatch) {
+          messages.push(
+            `Correo alternativo: enviaste "${requestedAltEmail}" y backend devolvio "${persistedAltEmail || 'vacio'}".`,
+          )
+        }
+
+        setProfileError(
+          `No se persistieron todos los cambios. ${messages.join(' ')}`,
         )
+        setProfileFeedback('')
+        setEditing(true)
+        return
+      }
 
-      setCustomer(updatedCustomer)
+      setEditing(false)
+      if (!profileFeedback) {
+        setProfileFeedback('Perfil y datos del cliente guardados correctamente.')
+      }
+    } catch (error: unknown) {
+      if (error instanceof ApiException) {
+        const fieldErrors = error.fieldErrors
+          ? Object.entries(error.fieldErrors)
+            .map(([field, messages]) => `${field}: ${messages.join(', ')}`)
+            .join(' | ')
+          : ''
+
+        setProfileError(
+          fieldErrors
+            ? `${error.message} (${fieldErrors})`
+            : error.message,
+        )
+      } else {
+        setProfileError('No se pudieron guardar los cambios del perfil.')
+      }
     }
-
-    setEditing(false)
   }
 
   async function handleCreateAddress() {
     if (!customer?.id) {
+      setAddressFeedback('Primero completa y guarda los datos del cliente.')
       return
     }
 
     if (
       !addressLine.trim()
+      || !addressProvince.trim()
       || !addressCity.trim()
-      || !addressCountry.trim()
     ) {
       setAddressFeedback(
-        'Completa línea, ciudad y país para guardar la dirección.',
+        'Completa calle principal, provincia y ciudad para guardar la dirección.',
       )
       return
     }
@@ -131,12 +279,14 @@ export default function ProfilePage() {
 
       const createdAddress =
         await customerUseCase.createAddress({
-          customer: customer.id,
-          address_line: addressLine.trim(),
-          city: addressCity.trim(),
-          country: addressCountry.trim(),
-          reference: addressReference.trim() || undefined,
-          is_primary: addresses.length === 0,
+          cliente: customer.id,
+          provincia: addressProvince.trim(),
+          ciudad: addressCity.trim(),
+          calle_principal: addressLine.trim(),
+          calle_secundaria: addressSecondary.trim() || null,
+          referencia: addressReference.trim() || null,
+          codigo_postal: addressPostalCode.trim() || null,
+          es_principal: addresses.length === 0,
         })
 
       setAddresses((current) => [
@@ -144,8 +294,10 @@ export default function ProfilePage() {
         ...current,
       ])
       setAddressLine('')
+      setAddressProvince('')
       setAddressCity('')
-      setAddressCountry('')
+      setAddressSecondary('')
+      setAddressPostalCode('')
       setAddressReference('')
       setAddressFeedback(
         'Dirección guardada correctamente.',
@@ -161,6 +313,7 @@ export default function ProfilePage() {
 
   async function handleCreateDocument() {
     if (!customer?.id) {
+      setDocumentFeedback('Primero completa y guarda los datos del cliente.')
       return
     }
 
@@ -180,10 +333,13 @@ export default function ProfilePage() {
 
       const createdDocument =
         await customerUseCase.createDocument({
-          customer: customer.id,
-          document_type: documentType.trim(),
-          document_number: documentNumber.trim(),
-          file: documentFile.trim() || undefined,
+          cliente: customer.id,
+          tipo_documento: documentType.trim(),
+          numero_documento: documentNumber.trim(),
+          archivo_url: documentFileUrl.trim() || null,
+          fecha_emision: documentIssueDate.trim() || null,
+          fecha_expiracion: documentExpiryDate.trim() || null,
+          verificado: false,
         })
 
       setDocuments((current) => [
@@ -192,7 +348,9 @@ export default function ProfilePage() {
       ])
       setDocumentType('CEDULA')
       setDocumentNumber('')
-      setDocumentFile('')
+      setDocumentFileUrl('')
+      setDocumentIssueDate('')
+      setDocumentExpiryDate('')
       setDocumentFeedback(
         'Documento guardado correctamente.',
       )
@@ -228,13 +386,25 @@ export default function ProfilePage() {
         </p>
       </div>
 
-      {editing && profile && customer && (
+      {editing && profile && (
         <EditProfileForm
           profile={profile}
           customer={customer}
           onSubmit={handleSaveProfile}
           onCancel={() => setEditing(false)}
         />
+      )}
+
+      {profileFeedback && (
+        <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+          {profileFeedback}
+        </p>
+      )}
+
+      {profileError && (
+        <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          {profileError}
+        </p>
       )}
 
       <Card>
@@ -285,7 +455,7 @@ export default function ProfilePage() {
 
         <CardContent className="space-y-2">
           <p>
-            <b>Cédula:</b> {customer?.cedula}
+            <b>Cédula:</b> {customer?.cedula ?? 'Sin definir'}
           </p>
 
           <p>
@@ -297,8 +467,21 @@ export default function ProfilePage() {
           </p>
 
           <p>
-            <b>Nacionalidad:</b>{' '}
-            {customer?.nacionalidad}
+            <b>Nacionalidad:</b> {customer?.nacionalidad ?? 'Sin definir'}
+          </p>
+
+          <p>
+            <b>Género:</b> {customer?.genero ?? 'Sin definir'}
+          </p>
+
+          <p>
+            <b>Fecha nacimiento:</b>{' '}
+            {customer?.fecha_nacimiento ?? 'Sin definir'}
+          </p>
+
+          <p>
+            <b>Correo alternativo:</b>{' '}
+            {customer?.correo_alternativo ?? 'Sin definir'}
           </p>
         </CardContent>
       </Card>
@@ -319,7 +502,7 @@ export default function ProfilePage() {
             <div className="mt-3 grid gap-3 sm:grid-cols-2">
               <div className="space-y-2 sm:col-span-2">
                 <Label htmlFor="address_line">
-                  Dirección
+                  Calle principal
                 </Label>
 
                 <Input
@@ -328,6 +511,22 @@ export default function ProfilePage() {
                   value={addressLine}
                   onChange={(event) =>
                     setAddressLine(event.target.value)
+                  }
+                  disabled={savingAddress}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="address_province">
+                  Provincia
+                </Label>
+
+                <Input
+                  id="address_province"
+                  placeholder="Bolívar"
+                  value={addressProvince}
+                  onChange={(event) =>
+                    setAddressProvince(event.target.value)
                   }
                   disabled={savingAddress}
                 />
@@ -350,16 +549,32 @@ export default function ProfilePage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="address_country">
-                  País
+                <Label htmlFor="address_secondary">
+                  Calle secundaria (opcional)
                 </Label>
 
                 <Input
-                  id="address_country"
-                  placeholder="Colombia"
-                  value={addressCountry}
+                  id="address_secondary"
+                  placeholder="Carrera 10"
+                  value={addressSecondary}
                   onChange={(event) =>
-                    setAddressCountry(event.target.value)
+                    setAddressSecondary(event.target.value)
+                  }
+                  disabled={savingAddress}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="address_postal_code">
+                  Código postal (opcional)
+                </Label>
+
+                <Input
+                  id="address_postal_code"
+                  placeholder="130001"
+                  value={addressPostalCode}
+                  onChange={(event) =>
+                    setAddressPostalCode(event.target.value)
                   }
                   disabled={savingAddress}
                 />
@@ -410,15 +625,20 @@ export default function ProfilePage() {
                 key={address.id}
                 className="border-b py-3"
               >
-                <p>{address.address_line}</p>
+                <p>{address.calle_principal}</p>
+
+                {address.calle_secundaria && (
+                  <p>{address.calle_secundaria}</p>
+                )}
 
                 <p>
-                  {address.city}, {address.country}
+                  {address.ciudad}
+                  {address.provincia ? `, ${address.provincia}` : ''}
                 </p>
 
-                {address.reference && (
+                {address.referencia && (
                   <p>
-                    Referencia: {address.reference}
+                    Referencia: {address.referencia}
                   </p>
                 )}
               </div>
@@ -486,16 +706,48 @@ export default function ProfilePage() {
               </div>
 
               <div className="space-y-2 sm:col-span-2">
-                <Label htmlFor="document_file">
+                <Label htmlFor="document_file_url">
                   URL de archivo (opcional)
                 </Label>
 
                 <Input
-                  id="document_file"
+                  id="document_file_url"
                   placeholder="https://..."
-                  value={documentFile}
+                  value={documentFileUrl}
                   onChange={(event) =>
-                    setDocumentFile(event.target.value)
+                    setDocumentFileUrl(event.target.value)
+                  }
+                  disabled={savingDocument}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="document_issue_date">
+                  Fecha emisión (opcional)
+                </Label>
+
+                <Input
+                  id="document_issue_date"
+                  type="date"
+                  value={documentIssueDate}
+                  onChange={(event) =>
+                    setDocumentIssueDate(event.target.value)
+                  }
+                  disabled={savingDocument}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="document_expiry_date">
+                  Fecha expiración (opcional)
+                </Label>
+
+                <Input
+                  id="document_expiry_date"
+                  type="date"
+                  value={documentExpiryDate}
+                  onChange={(event) =>
+                    setDocumentExpiryDate(event.target.value)
                   }
                   disabled={savingDocument}
                 />
@@ -531,12 +783,18 @@ export default function ProfilePage() {
                 className="border-b py-3"
               >
                 <p>
-                  Tipo: {document.document_type}
+                  Tipo: {document.tipo_documento}
                 </p>
 
                 <p>
-                  Número: {document.document_number}
+                  Número: {document.numero_documento}
                 </p>
+
+                {document.archivo_url && (
+                  <p>
+                    Archivo: {document.archivo_url}
+                  </p>
+                )}
               </div>
             ))
           )}

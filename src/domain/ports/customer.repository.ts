@@ -6,20 +6,24 @@ import type { UserProfile } from '@/domain/entities/user-profile.entity'
 export interface CustomerRepository {
   getProfile(): Promise<UserProfile>
 
-  getCustomer(): Promise<Customer>
+  getCustomer(profileId: number): Promise<Customer | null>
+
+  createCustomer(
+    data: Omit<Customer, 'id' | 'created_at' | 'updated_at'>,
+  ): Promise<Customer>
 
   updateCustomer(
     id: number,
     data: Partial<Customer>,
   ): Promise<Customer>
 
-  getAddresses(): Promise<Address[]>
+  getAddresses(customerId?: number): Promise<Address[]>
 
   createAddress(
     data: Omit<Address, 'id'>,
   ): Promise<Address>
 
-  getDocuments(): Promise<Document[]>
+  getDocuments(customerId?: number): Promise<Document[]>
 
   createDocument(
     data: Omit<Document, 'id'>,
