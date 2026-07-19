@@ -14,19 +14,34 @@ interface ReferencePriceProps {
 }
 
 function formatPrice(
-  value: string,
+  value: string | null | undefined,
   currency: string,
 ): string {
-  const amount = Number(value)
-
-  if (Number.isNaN(amount)) {
-    return `${value} ${currency}`
+  if (
+    value === null
+    || value === undefined
+    || value.trim() === ''
+  ) {
+    return 'No configurado'
   }
 
-  return new Intl.NumberFormat('es-EC', {
-    style: 'currency',
-    currency,
-  }).format(amount)
+  const amount = Number(value)
+
+  if (!Number.isFinite(amount)) {
+    return `${value} ${currency}`.trim()
+  }
+
+  try {
+    return new Intl.NumberFormat(
+      'es-EC',
+      {
+        style: 'currency',
+        currency,
+      },
+    ).format(amount)
+  } catch {
+    return `${amount.toFixed(2)} ${currency}`.trim()
+  }
 }
 
 export default function ReferencePrice({
@@ -35,8 +50,8 @@ export default function ReferencePrice({
 }: ReferencePriceProps) {
   const rate = rates.find(
     (item) =>
-      item.tipo_habitacion === roomTypeId &&
-      item.is_active,
+      item.tipo_habitacion === roomTypeId
+      && item.is_active,
   )
 
   if (!rate) {
@@ -80,6 +95,14 @@ export default function ReferencePrice({
           </p>
         </div>
 
+        <p className="text-xs text-muted-foreground">
+          Vigente desde{' '}
+          {rate.temporada_fecha_inicio}
+          {' '}hasta{' '}
+          {rate.temporada_fecha_fin}
+          {' '}(fin exclusivo)
+        </p>
+
         <Separator />
 
         <div className="grid gap-3 text-sm sm:grid-cols-2">
@@ -87,6 +110,7 @@ export default function ReferencePrice({
             <p className="text-muted-foreground">
               Fin de semana
             </p>
+
             <p className="font-medium">
               {formatPrice(
                 rate.precio_fin_semana,
@@ -99,6 +123,7 @@ export default function ReferencePrice({
             <p className="text-muted-foreground">
               Persona extra
             </p>
+
             <p className="font-medium">
               {formatPrice(
                 rate.precio_persona_extra,
@@ -111,3 +136,4 @@ export default function ReferencePrice({
     </Card>
   )
 }
+

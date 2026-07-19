@@ -10,14 +10,52 @@ interface PaginatedResponse<T> {
   results: T[]
 }
 
-export class AxiosRateReferenceRepository
-  implements RateReferenceRepository
-{
-  async getRates(): Promise<RateReference[]> {
-    const { data } = await apiClient.get<
-      PaginatedResponse<RateReference>
-    >(apiConfig.endpoints.rates.roomRates)
+type RateCollectionResponse =
+  | PaginatedResponse<RateReference>
+  | RateReference[]
 
-    return data.results
+function getResults(
+  response: RateCollectionResponse,
+): RateReference[] {
+  if (Array.isArray(response)) {
+    return response
+  }
+
+  return response.results
+}
+
+export class AxiosRateReferenceRepository
+  implements RateReferenceRepository {
+  async getRates(): Promise<RateReference[]> {
+    const { data } =
+      await apiClient.get<RateCollectionResponse>(
+        apiConfig.endpoints.rates.roomRates,
+        {
+          params: {
+            page_size: 100,
+            is_active: true,
+          },
+        },
+      )
+
+    return getResults(data)
+  }
+
+  async getCurrentRate(
+    roomTypeId: number,
+    date: string,
+  ): Promise<RateReference> {
+    const { data } =
+      await apiClient.get<RateReference>(
+        `${apiConfig.endpoints.rates.roomRates}vigente/`,
+        {
+          params: {
+            tipo_habitacion: roomTypeId,
+            fecha: date,
+          },
+        },
+      )
+
+    return data
   }
 }
