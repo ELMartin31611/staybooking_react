@@ -7,6 +7,55 @@ import { Button } from '@/presentation/components/ui/button'
 import { Card, CardContent } from '@/presentation/components/ui/card'
 import { Input } from '@/presentation/components/ui/input'
 import { Label } from '@/presentation/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/presentation/components/ui/select'
+
+function normalizeCatalogValue(value?: string | null): string {
+  if (!value) {
+    return ''
+  }
+
+  return value
+    .trim()
+    .toUpperCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+}
+
+  const GENEROS = ['FEMENINO', 'MASCULINO'] as const
+
+const NACIONALIDADES = [
+  { value: 'ECUATORIANA', label: '🇪🇨 Ecuatoriana' },
+  { value: 'COLOMBIANA', label: '🇨🇴 Colombiana' },
+  { value: 'PERUANA', label: '🇵🇪 Peruana' },
+  { value: 'VENEZOLANA', label: '🇻🇪 Venezolana' },
+  { value: 'ARGENTINA', label: '🇦🇷 Argentina' },
+  { value: 'CHILENA', label: '🇨🇱 Chilena' },
+  { value: 'MEXICANA', label: '🇲🇽 Mexicana' },
+  { value: 'ESPANOLA', label: '🇪🇸 Española' },
+  { value: 'ESTADOUNIDENSE', label: '🇺🇸 Estadounidense' },
+  { value: 'BRASILENA', label: '🇧🇷 Brasileña' },
+  { value: 'BOLIVIANA', label: '🇧🇴 Boliviana' },
+  { value: 'OTRA', label: '🌎 Otra' },
+] as const
+
+const NACIONALIDAD_VALUES = NACIONALIDADES.map((item) => item.value)
+
+function toAllowedValue(
+  rawValue: string | null | undefined,
+  allowedValues: readonly string[],
+): string {
+  const normalized = normalizeCatalogValue(rawValue)
+
+  return allowedValues.includes(normalized)
+    ? normalized
+    : ''
+}
 
 interface EditProfileFormProps {
   profile: UserProfile
@@ -36,9 +85,11 @@ export default function EditProfileForm({
   const [fechaNacimiento, setFechaNacimiento] = useState(
     customer?.fecha_nacimiento ?? '',
   )
-  const [genero, setGenero] = useState(customer?.genero ?? '')
+  const [genero, setGenero] = useState(
+    toAllowedValue(customer?.genero, GENEROS),
+  )
   const [nacionalidad, setNacionalidad] = useState(
-    customer?.nacionalidad ?? '',
+    toAllowedValue(customer?.nacionalidad, NACIONALIDAD_VALUES),
   )
   const [correoAlternativo, setCorreoAlternativo] = useState(
     customer?.correo_alternativo ?? '',
@@ -67,8 +118,11 @@ export default function EditProfileForm({
           nombres: nombres.trim(),
           apellidos: apellidos.trim(),
           fecha_nacimiento: fechaNacimiento.trim() || null,
-          genero: genero.trim() || null,
-          nacionalidad: nacionalidad.trim(),
+          genero: toAllowedValue(genero, GENEROS) || null,
+          nacionalidad: toAllowedValue(
+            nacionalidad,
+            NACIONALIDAD_VALUES,
+          ),
           correo_alternativo: correoAlternativo.trim() || null,
         },
       )
@@ -85,6 +139,10 @@ export default function EditProfileForm({
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-4">
             <h2 className="text-lg font-semibold">Usuario</h2>
+
+            <p className="text-sm text-muted-foreground">
+              Datos de tu cuenta (como te mostramos en la plataforma).
+            </p>
 
             <div className="space-y-2">
               <Label htmlFor="username">Usuario</Label>
@@ -123,7 +181,7 @@ export default function EditProfileForm({
 
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="first_name">Nombre</Label>
+                <Label htmlFor="first_name">Nombre para mostrar</Label>
                 <Input
                   id="first_name"
                   value={firstName}
@@ -134,7 +192,7 @@ export default function EditProfileForm({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="last_name">Apellido</Label>
+                <Label htmlFor="last_name">Apellido para mostrar</Label>
                 <Input
                   id="last_name"
                   value={lastName}
@@ -147,7 +205,11 @@ export default function EditProfileForm({
           </div>
 
           <div className="space-y-4">
-            <h2 className="text-lg font-semibold">Cliente</h2>
+            <h2 className="text-lg font-semibold">Datos del cliente (documento de identidad)</h2>
+
+            <p className="text-sm text-muted-foreground">
+              Debe coincidir exactamente con tu cedula o documento oficial.
+            </p>
 
             <div className="space-y-2">
               <Label htmlFor="cedula">Cédula</Label>
@@ -161,7 +223,7 @@ export default function EditProfileForm({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="nombres">Nombres</Label>
+              <Label htmlFor="nombres">Nombres (segun documento)</Label>
               <Input
                 id="nombres"
                 value={nombres}
@@ -172,7 +234,7 @@ export default function EditProfileForm({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="apellidos">Apellidos</Label>
+              <Label htmlFor="apellidos">Apellidos (segun documento)</Label>
               <Input
                 id="apellidos"
                 value={apellidos}
@@ -196,25 +258,125 @@ export default function EditProfileForm({
 
               <div className="space-y-2">
                 <Label htmlFor="genero">Género</Label>
-                <Input
-                  id="genero"
+                <Select
                   value={genero}
-                  onChange={(event) => setGenero(event.target.value)}
+                  onValueChange={setGenero}
                   disabled={loading}
-                  placeholder="Ej: FEMENINO"
-                />
+                >
+                  <SelectTrigger
+                    id="genero"
+                    className="w-full"
+                  >
+                    <SelectValue placeholder="Selecciona tu género" />
+                  </SelectTrigger>
+
+                  <SelectContent>
+                    <SelectItem
+                      value="FEMENINO"
+                      className="cursor-pointer focus:bg-primary/10 focus:text-primary data-[state=checked]:bg-primary/10 data-[state=checked]:text-primary"
+                    >
+                      🙋‍♀️ Femenino
+                    </SelectItem>
+                    <SelectItem
+                      value="MASCULINO"
+                      className="cursor-pointer focus:bg-primary/10 focus:text-primary data-[state=checked]:bg-primary/10 data-[state=checked]:text-primary"
+                    >
+                      🙋‍♂️ Masculino
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="nacionalidad">Nacionalidad</Label>
-              <Input
-                id="nacionalidad"
+              <Select
                 value={nacionalidad}
-                onChange={(event) => setNacionalidad(event.target.value)}
+                onValueChange={setNacionalidad}
                 disabled={loading}
-                required
-              />
+              >
+                <SelectTrigger
+                  id="nacionalidad"
+                  className="w-full"
+                >
+                  <SelectValue placeholder="Selecciona tu nacionalidad" />
+                </SelectTrigger>
+
+                <SelectContent>
+                  <SelectItem
+                    value="ECUATORIANA"
+                    className="cursor-pointer focus:bg-primary/10 focus:text-primary data-[state=checked]:bg-primary/10 data-[state=checked]:text-primary"
+                  >
+                    🇪🇨 Ecuatoriana
+                  </SelectItem>
+                  <SelectItem
+                    value="COLOMBIANA"
+                    className="cursor-pointer focus:bg-primary/10 focus:text-primary data-[state=checked]:bg-primary/10 data-[state=checked]:text-primary"
+                  >
+                    🇨🇴 Colombiana
+                  </SelectItem>
+                  <SelectItem
+                    value="PERUANA"
+                    className="cursor-pointer focus:bg-primary/10 focus:text-primary data-[state=checked]:bg-primary/10 data-[state=checked]:text-primary"
+                  >
+                    🇵🇪 Peruana
+                  </SelectItem>
+                  <SelectItem
+                    value="VENEZOLANA"
+                    className="cursor-pointer focus:bg-primary/10 focus:text-primary data-[state=checked]:bg-primary/10 data-[state=checked]:text-primary"
+                  >
+                    🇻🇪 Venezolana
+                  </SelectItem>
+                  <SelectItem
+                    value="ARGENTINA"
+                    className="cursor-pointer focus:bg-primary/10 focus:text-primary data-[state=checked]:bg-primary/10 data-[state=checked]:text-primary"
+                  >
+                    🇦🇷 Argentina
+                  </SelectItem>
+                  <SelectItem
+                    value="CHILENA"
+                    className="cursor-pointer focus:bg-primary/10 focus:text-primary data-[state=checked]:bg-primary/10 data-[state=checked]:text-primary"
+                  >
+                    🇨🇱 Chilena
+                  </SelectItem>
+                  <SelectItem
+                    value="MEXICANA"
+                    className="cursor-pointer focus:bg-primary/10 focus:text-primary data-[state=checked]:bg-primary/10 data-[state=checked]:text-primary"
+                  >
+                    🇲🇽 Mexicana
+                  </SelectItem>
+                  <SelectItem
+                    value="ESPAÑOLA"
+                    className="cursor-pointer focus:bg-primary/10 focus:text-primary data-[state=checked]:bg-primary/10 data-[state=checked]:text-primary"
+                  >
+                    🇪🇸 Española
+                  </SelectItem>
+                  <SelectItem
+                    value="ESTADOUNIDENSE"
+                    className="cursor-pointer focus:bg-primary/10 focus:text-primary data-[state=checked]:bg-primary/10 data-[state=checked]:text-primary"
+                  >
+                    🇺🇸 Estadounidense
+                  </SelectItem>
+                  <SelectItem
+                    value="BRASILEÑA"
+                    className="cursor-pointer focus:bg-primary/10 focus:text-primary data-[state=checked]:bg-primary/10 data-[state=checked]:text-primary"
+                  >
+                    🇧🇷 Brasileña
+                  </SelectItem>
+                  <SelectItem
+                    value="BOLIVIANA"
+                    className="cursor-pointer focus:bg-primary/10 focus:text-primary data-[state=checked]:bg-primary/10 data-[state=checked]:text-primary"
+                  >
+                    🇧🇴 Boliviana
+                  </SelectItem>
+                  <SelectItem
+                    value="OTRA"
+                    className="cursor-pointer focus:bg-primary/10 focus:text-primary data-[state=checked]:bg-primary/10 data-[state=checked]:text-primary"
+                  >
+                    🌎 Otra
+                  </SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-2">

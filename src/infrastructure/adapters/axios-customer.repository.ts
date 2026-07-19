@@ -33,6 +33,23 @@ function toArray<T>(value: unknown): T[] {
   return []
 }
 
+function getPerfilId(customer: Customer): number | null {
+  if (typeof customer.perfil === 'number') {
+    return customer.perfil
+  }
+
+  if (
+    customer.perfil
+    && typeof customer.perfil === 'object'
+    && 'id' in (customer.perfil as object)
+  ) {
+    const nestedId = Number((customer.perfil as { id?: unknown }).id)
+    return Number.isFinite(nestedId) ? nestedId : null
+  }
+
+  return null
+}
+
 export class AxiosCustomerRepository
   implements CustomerRepository
 {
@@ -53,11 +70,21 @@ export class AxiosCustomerRepository
     const { data } =
       await apiClient.get<unknown>(
         apiConfig.endpoints.customers.customers,
+        {
+          params: {
+            perfil: profileId,
+          },
+        },
       )
 
     const customers = toArray<Customer>(data)
 
-    return customers.find((customer) => customer.perfil === profileId) ?? null
+    const match = customers.find((customer) => {
+      const perfilId = getPerfilId(customer)
+      return perfilId === profileId
+    })
+
+    return match ?? customers[0] ?? null
 
   }
 

@@ -46,6 +46,28 @@ export class AxiosAuthRepository implements AuthRepository {
         data,
       )
 
+    const requestedEmail = data.email?.trim()
+    const shouldRetryByProfilesEndpoint =
+      Boolean(requestedEmail)
+      && profile.id
+      && requestedEmail !== profile.email
+
+    if (shouldRetryByProfilesEndpoint) {
+      try {
+        const { data: retriedProfile } =
+          await apiClient.patch<UserProfile>(
+            `${apiConfig.endpoints.customers.profiles}${profile.id}/`,
+            {
+              email: requestedEmail,
+            },
+          )
+
+        return retriedProfile
+      } catch {
+        // Keep /perfil/ response when fallback endpoint is unavailable.
+      }
+    }
+
     return profile
   }
 

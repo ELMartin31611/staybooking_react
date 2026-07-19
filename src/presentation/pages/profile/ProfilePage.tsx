@@ -4,6 +4,7 @@ import type { Address } from '@/domain/entities/address.entity'
 import type { Customer } from '@/domain/entities/customer.entity'
 import type { Document } from '@/domain/entities/document.entity'
 import type { UserProfile } from '@/domain/entities/user-profile.entity'
+import { ApiException } from '@/domain/exceptions/api.exception'
 
 import EditProfileForm from '@/presentation/components/profile/EditProfileForm'
 import { ProfileImageUpload } from '@/presentation/components/profile/ProfileImageUpload'
@@ -98,51 +99,160 @@ export default function ProfilePage() {
     setProfileError('')
 
     try {
-      const updatedProfile = await authUseCase.updateProfile(
-        profileData,
-      )
+      const requestedEmail = profileData.email?.trim() ?? ''
+      const requestedAltEmail = customerData.correo_alternativo?.trim() ?? ''
+      const profilePayload: Partial<UserProfile> = {
+        username: profileData.username?.trim(),
+        email: profileData.email?.trim(),
+        telefono: profileData.telefono ?? null,
+      }
+
+      const updatedProfile = await authUseCase.updateProfile(profilePayload)
 
       setProfile(updatedProfile)
       localUserStorage.saveUser(updatedProfile)
 
-      if (
-        !customerData.cedula?.trim()
-        || !customerData.nombres?.trim()
-        || !customerData.apellidos?.trim()
-        || !customerData.nacionalidad?.trim()
-      ) {
-        setProfileError(
-          'Completa cédula, nombres, apellidos y nacionalidad para guardar el cliente.',
-        )
-        return
+      // first_name / last_name are optional by API contract in this backend.
+      if (profileData.first_name?.trim() || profileData.last_name?.trim()) {
+        try {
+          const updatedProfileWithNames = await authUseCase.updateProfile({
+            first_name: profileData.first_name?.trim(),
+            last_name: profileData.last_name?.trim(),
+          })
+
+          setProfile(updatedProfileWithNames)
+          localUserStorage.saveUser(updatedProfileWithNames)
+        } catch {
+          setProfileFeedback(
+            'Perfil guardado. Nombre y apellido no se actualizaron porque esta API no los soporta en /perfil/.',
+          )
+        }
+      }
+
+      const requiredCustomerFieldsCompleted =
+        Boolean(customerData.cedula?.trim())
+        && Boolean(customerData.nombres?.trim())
+        && Boolean(customerData.apellidos?.trim())
+        && Boolean(customerData.nacionalidad?.trim())
+
+      const customerPatch: Partial<Customer> = {}
+
+      if (customerData.cedula?.trim()) {
+        customerPatch.cedula = customerData.cedula.trim()
+      }
+
+      if (customerData.nombres?.trim()) {
+        customerPatch.nombres = customerData.nombres.trim()
+      }
+
+      if (customerData.apellidos?.trim()) {
+        customerPatch.apellidos = customerData.apellidos.trim()
+      }
+
+      if (customerData.nacionalidad?.trim()) {
+        customerPatch.nacionalidad = customerData.nacionalidad.trim()
+      }
+
+      if (customerData.fecha_nacimiento !== undefined) {
+        customerPatch.fecha_nacimiento = customerData.fecha_nacimiento
+      }
+
+      if (customerData.genero !== undefined) {
+        customerPatch.genero = customerData.genero
+      }
+
+      if (customerData.correo_alternativo !== undefined) {
+        customerPatch.correo_alternativo = customerData.correo_alternativo
       }
 
       if (customer?.id) {
-        const updatedCustomer = await customerUseCase.updateCustomer(
-          customer.id,
-          customerData,
-        )
-
-        setCustomer(updatedCustomer)
+        if (Object.keys(customerPatch).length > 0) {
+          await customerUseCase.updateCustomer(
+            customer.id,
+            customerPatch,
+          )
+        }
       } else {
-        const createdCustomer = await customerUseCase.createCustomer({
+        if (!requiredCustomerFieldsCompleted) {
+          setEditing(false)
+          setProfileFeedback(
+            'Perfil guardado. Para crear el cliente completa cédula, nombres, apellidos y nacionalidad.',
+          )
+          return
+        }
+
+        await customerUseCase.createCustomer({
           perfil: updatedProfile.id,
-          cedula: customerData.cedula,
-          nombres: customerData.nombres,
-          apellidos: customerData.apellidos,
+          cedula: customerData.cedula!,
+          nombres: customerData.nombres!,
+          apellidos: customerData.apellidos!,
           fecha_nacimiento: customerData.fecha_nacimiento ?? null,
           genero: customerData.genero ?? null,
-          nacionalidad: customerData.nacionalidad,
+          nacionalidad: customerData.nacionalidad!,
           correo_alternativo: customerData.correo_alternativo ?? null,
         })
+      }
 
-        setCustomer(createdCustomer)
+      const latestProfile = await authUseCase.getProfile()
+      const refreshedCustomer = await customerUseCase.getCustomer(
+        latestProfile.id,
+      )
+
+      setProfile(latestProfile)
+      localUserStorage.saveUser(latestProfile)
+      setCustomer(refreshedCustomer)
+
+      const persistedEmail = latestProfile.email?.trim() ?? ''
+      const persistedAltEmail = refreshedCustomer?.correo_alternativo?.trim() ?? ''
+      const emailMismatch = requestedEmail && persistedEmail !== requestedEmail
+      const altEmailMismatch =
+        requestedAltEmail && persistedAltEmail !== requestedAltEmail
+
+      if (
+        emailMismatch || altEmailMismatch
+      ) {
+        const messages: string[] = []
+
+        if (emailMismatch) {
+          messages.push(
+            `Correo principal: enviaste "${requestedEmail}" y backend devolvio "${persistedEmail || 'vacio'}".`,
+          )
+        }
+
+        if (altEmailMismatch) {
+          messages.push(
+            `Correo alternativo: enviaste "${requestedAltEmail}" y backend devolvio "${persistedAltEmail || 'vacio'}".`,
+          )
+        }
+
+        setProfileError(
+          `No se persistieron todos los cambios. ${messages.join(' ')}`,
+        )
+        setProfileFeedback('')
+        setEditing(true)
+        return
       }
 
       setEditing(false)
-      setProfileFeedback('Perfil y datos del cliente guardados correctamente.')
-    } catch {
-      setProfileError('No se pudieron guardar los cambios del perfil.')
+      if (!profileFeedback) {
+        setProfileFeedback('Perfil y datos del cliente guardados correctamente.')
+      }
+    } catch (error: unknown) {
+      if (error instanceof ApiException) {
+        const fieldErrors = error.fieldErrors
+          ? Object.entries(error.fieldErrors)
+            .map(([field, messages]) => `${field}: ${messages.join(', ')}`)
+            .join(' | ')
+          : ''
+
+        setProfileError(
+          fieldErrors
+            ? `${error.message} (${fieldErrors})`
+            : error.message,
+        )
+      } else {
+        setProfileError('No se pudieron guardar los cambios del perfil.')
+      }
     }
   }
 
@@ -276,19 +386,10 @@ export default function ProfilePage() {
         </p>
       </div>
 
-      {editing && profile && customer && (
+      {editing && profile && (
         <EditProfileForm
           profile={profile}
           customer={customer}
-          onSubmit={handleSaveProfile}
-          onCancel={() => setEditing(false)}
-        />
-      )}
-
-      {editing && profile && !customer && (
-        <EditProfileForm
-          profile={profile}
-          customer={null}
           onSubmit={handleSaveProfile}
           onCancel={() => setEditing(false)}
         />
