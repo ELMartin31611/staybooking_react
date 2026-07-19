@@ -1,6 +1,9 @@
-import { BrowserRouter, Route, Routes } from 'react-router-dom'
-import { localUserStorage } from '@/infrastructure/storage/local-user-storage'
-import { localTokenStorage } from '@/infrastructure/storage/local-token-storage'
+import {
+  BrowserRouter,
+  Route,
+  Routes,
+} from 'react-router-dom'
+
 import {
   AdminLayout,
   PrivateLayout,
@@ -9,27 +12,26 @@ import {
 import AdminPlaceholderPage from '@/presentation/pages/admin/AdminPlaceholderPage'
 import LoginPage from '@/presentation/pages/auth/LoginPage'
 import RegisterPage from '@/presentation/pages/auth/RegisterPage'
+import HotelsCatalogPage from '@/presentation/pages/catalog/HotelsCatalogPage'
 import ForbiddenPage from '@/presentation/pages/ForbiddenPage'
 import NotFoundPage from '@/presentation/pages/NotFoundPage'
-import HotelsCatalogPage from '@/presentation/pages/catalog/HotelsCatalogPage'
 import ProfilePage from '@/presentation/pages/profile/ProfilePage'
-import MyReservationsPage from '@/presentation/pages/reservations/MyReservationsPage'
-import SelectedReservationPage from '@/presentation/pages/reservations/SelectedReservationPage'
 import ComingSoonPage from '@/presentation/pages/public/ComingSoonPage'
 import HomePage from '@/presentation/pages/public/HomePage'
-
+import MyReservationsPage from '@/presentation/pages/reservations/MyReservationsPage'
+import SelectedReservationPage from '@/presentation/pages/reservations/SelectedReservationPage'
 
 import ProtectedRoute from './ProtectedRoute'
 
 export default function AppRouter() {
-  const isAuthenticated = localTokenStorage.hasTokens()
-  const userRole = localUserStorage.getUser()?.rol ?? null
-
   return (
     <BrowserRouter>
       <Routes>
         <Route element={<PublicLayout />}>
-          <Route index element={<HomePage />} />
+          <Route
+            index
+            element={<HomePage />}
+          />
 
           <Route
             path="hoteles"
@@ -41,7 +43,7 @@ export default function AppRouter() {
             element={
               <ComingSoonPage
                 title="Detalle del hotel"
-                description="El detalle, tipos y habitaciones serán desarrollados por el Integrante 2."
+                description="Consulta la información, habitaciones y servicios disponibles."
               />
             }
           />
@@ -51,23 +53,28 @@ export default function AppRouter() {
             element={
               <ComingSoonPage
                 title="Servicios"
-                description="Los servicios incluidos se mostrarán con el detalle de las habitaciones."
+                description="Consulta los servicios incluidos en nuestros hoteles y habitaciones."
               />
             }
           />
         </Route>
 
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
-        <Route path="/403" element={<ForbiddenPage />} />
+        <Route
+          path="/login"
+          element={<LoginPage />}
+        />
 
         <Route
-          element={
-            <ProtectedRoute
-              isAuthenticated={isAuthenticated}
-            />
-          }
-        >
+          path="/register"
+          element={<RegisterPage />}
+        />
+
+        <Route
+          path="/403"
+          element={<ForbiddenPage />}
+        />
+
+        <Route element={<ProtectedRoute />}>
           <Route element={<PrivateLayout />}>
             <Route
               path="/perfil"
@@ -89,28 +96,35 @@ export default function AppRouter() {
         <Route
           element={
             <ProtectedRoute
-              isAuthenticated={isAuthenticated}
-              userRole={userRole}
               allowedRoles={['ADMIN']}
             />
           }
         >
-          <Route path="/admin" element={<AdminLayout />}>
-            <Route index element={<AdminPlaceholderPage />} />
+          <Route
+            path="/admin"
+            element={<AdminLayout />}
+          >
+            <Route
+              index
+              element={<AdminPlaceholderPage />}
+            />
 
             <Route
               path="*"
               element={
                 <ComingSoonPage
                   title="Módulo administrativo"
-                  description="Este CRUD será implementado en una rama posterior."
+                  description="Esta sección está disponible únicamente para administradores."
                 />
               }
             />
           </Route>
         </Route>
 
-        <Route path="*" element={<NotFoundPage />} />
+        <Route
+          path="*"
+          element={<NotFoundPage />}
+        />
       </Routes>
     </BrowserRouter>
   )

@@ -9,6 +9,7 @@ import EditProfileForm from '@/presentation/components/profile/EditProfileForm'
 import { ProfileImageUpload } from '@/presentation/components/profile/ProfileImageUpload'
 import { authUseCase } from '@/infrastructure/factories/auth.factory'
 import { customerUseCase } from '@/infrastructure/factories/customer.factory'
+import { localUserStorage } from '@/infrastructure/storage/local-user-storage'
 
 import { Loader } from '@/presentation/components/common/Loader'
 import {
@@ -88,17 +89,24 @@ export default function ProfilePage() {
       return
     }
 
-    await authUseCase.updateProfile(profileData)
+    const updatedProfile = await authUseCase.updateProfile(
+      profileData,
+    )
+
+    setProfile(updatedProfile)
+    localUserStorage.saveUser(updatedProfile)
 
     if (customer?.id) {
-      await customerUseCase.updateCustomer(
-        customer.id,
-        customerData,
-      )
+      const updatedCustomer =
+        await customerUseCase.updateCustomer(
+          customer.id,
+          customerData,
+        )
+
+      setCustomer(updatedCustomer)
     }
 
     setEditing(false)
-    window.location.reload()
   }
 
   async function handleCreateAddress() {
@@ -106,8 +114,14 @@ export default function ProfilePage() {
       return
     }
 
-    if (!addressLine.trim() || !addressCity.trim() || !addressCountry.trim()) {
-      setAddressFeedback('Completa línea, ciudad y país para guardar la dirección.')
+    if (
+      !addressLine.trim()
+      || !addressCity.trim()
+      || !addressCountry.trim()
+    ) {
+      setAddressFeedback(
+        'Completa línea, ciudad y país para guardar la dirección.',
+      )
       return
     }
 
@@ -115,23 +129,31 @@ export default function ProfilePage() {
       setSavingAddress(true)
       setAddressFeedback('')
 
-      const createdAddress = await customerUseCase.createAddress({
-        customer: customer.id,
-        address_line: addressLine.trim(),
-        city: addressCity.trim(),
-        country: addressCountry.trim(),
-        reference: addressReference.trim() || undefined,
-        is_primary: addresses.length === 0,
-      })
+      const createdAddress =
+        await customerUseCase.createAddress({
+          customer: customer.id,
+          address_line: addressLine.trim(),
+          city: addressCity.trim(),
+          country: addressCountry.trim(),
+          reference: addressReference.trim() || undefined,
+          is_primary: addresses.length === 0,
+        })
 
-      setAddresses((current) => [createdAddress, ...current])
+      setAddresses((current) => [
+        createdAddress,
+        ...current,
+      ])
       setAddressLine('')
       setAddressCity('')
       setAddressCountry('')
       setAddressReference('')
-      setAddressFeedback('Dirección guardada correctamente.')
+      setAddressFeedback(
+        'Dirección guardada correctamente.',
+      )
     } catch {
-      setAddressFeedback('No se pudo guardar la dirección. Intenta nuevamente.')
+      setAddressFeedback(
+        'No se pudo guardar la dirección. Intenta nuevamente.',
+      )
     } finally {
       setSavingAddress(false)
     }
@@ -142,8 +164,13 @@ export default function ProfilePage() {
       return
     }
 
-    if (!documentType.trim() || !documentNumber.trim()) {
-      setDocumentFeedback('Completa tipo y número para guardar el documento.')
+    if (
+      !documentType.trim()
+      || !documentNumber.trim()
+    ) {
+      setDocumentFeedback(
+        'Completa tipo y número para guardar el documento.',
+      )
       return
     }
 
@@ -151,20 +178,28 @@ export default function ProfilePage() {
       setSavingDocument(true)
       setDocumentFeedback('')
 
-      const createdDocument = await customerUseCase.createDocument({
-        customer: customer.id,
-        document_type: documentType.trim(),
-        document_number: documentNumber.trim(),
-        file: documentFile.trim() || undefined,
-      })
+      const createdDocument =
+        await customerUseCase.createDocument({
+          customer: customer.id,
+          document_type: documentType.trim(),
+          document_number: documentNumber.trim(),
+          file: documentFile.trim() || undefined,
+        })
 
-      setDocuments((current) => [createdDocument, ...current])
+      setDocuments((current) => [
+        createdDocument,
+        ...current,
+      ])
       setDocumentType('CEDULA')
       setDocumentNumber('')
       setDocumentFile('')
-      setDocumentFeedback('Documento guardado correctamente.')
+      setDocumentFeedback(
+        'Documento guardado correctamente.',
+      )
     } catch {
-      setDocumentFeedback('No se pudo guardar el documento. Intenta nuevamente.')
+      setDocumentFeedback(
+        'No se pudo guardar el documento. Intenta nuevamente.',
+      )
     } finally {
       setSavingDocument(false)
     }
@@ -212,8 +247,9 @@ export default function ProfilePage() {
         <CardContent className="space-y-4">
           <ProfileImageUpload
             currentImage={profile?.foto_url}
-            onSuccess={() => {
-              window.location.reload()
+            onSuccess={(updatedProfile) => {
+              setProfile(updatedProfile)
+              localUserStorage.saveUser(updatedProfile)
             }}
           />
 
@@ -223,7 +259,9 @@ export default function ProfilePage() {
             </p>
 
             <p>
-              <b>Nombre:</b> {profile?.first_name} {profile?.last_name}
+              <b>Nombre:</b>{' '}
+              {profile?.first_name}{' '}
+              {profile?.last_name}
             </p>
 
             <p>
@@ -231,7 +269,8 @@ export default function ProfilePage() {
             </p>
 
             <p>
-              <b>Rol:</b> {profile?.rol ?? 'CLIENTE'}
+              <b>Rol:</b>{' '}
+              {profile?.rol ?? 'CLIENTE'}
             </p>
           </div>
         </CardContent>
@@ -258,7 +297,8 @@ export default function ProfilePage() {
           </p>
 
           <p>
-            <b>Nacionalidad:</b> {customer?.nacionalidad}
+            <b>Nacionalidad:</b>{' '}
+            {customer?.nacionalidad}
           </p>
         </CardContent>
       </Card>
@@ -272,49 +312,71 @@ export default function ProfilePage() {
 
         <CardContent className="space-y-5">
           <div className="rounded-xl border bg-muted/20 p-4">
-            <h3 className="text-sm font-semibold">Nueva dirección</h3>
+            <h3 className="text-sm font-semibold">
+              Nueva dirección
+            </h3>
 
             <div className="mt-3 grid gap-3 sm:grid-cols-2">
               <div className="space-y-2 sm:col-span-2">
-                <Label htmlFor="address_line">Dirección</Label>
+                <Label htmlFor="address_line">
+                  Dirección
+                </Label>
+
                 <Input
                   id="address_line"
                   placeholder="Calle 12 # 45-67"
                   value={addressLine}
-                  onChange={(event) => setAddressLine(event.target.value)}
+                  onChange={(event) =>
+                    setAddressLine(event.target.value)
+                  }
                   disabled={savingAddress}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="address_city">Ciudad</Label>
+                <Label htmlFor="address_city">
+                  Ciudad
+                </Label>
+
                 <Input
                   id="address_city"
                   placeholder="Cartagena"
                   value={addressCity}
-                  onChange={(event) => setAddressCity(event.target.value)}
+                  onChange={(event) =>
+                    setAddressCity(event.target.value)
+                  }
                   disabled={savingAddress}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="address_country">País</Label>
+                <Label htmlFor="address_country">
+                  País
+                </Label>
+
                 <Input
                   id="address_country"
                   placeholder="Colombia"
                   value={addressCountry}
-                  onChange={(event) => setAddressCountry(event.target.value)}
+                  onChange={(event) =>
+                    setAddressCountry(event.target.value)
+                  }
                   disabled={savingAddress}
                 />
               </div>
 
               <div className="space-y-2 sm:col-span-2">
-                <Label htmlFor="address_reference">Referencia (opcional)</Label>
+                <Label htmlFor="address_reference">
+                  Referencia (opcional)
+                </Label>
+
                 <Input
                   id="address_reference"
                   placeholder="Apartamento 402"
                   value={addressReference}
-                  onChange={(event) => setAddressReference(event.target.value)}
+                  onChange={(event) =>
+                    setAddressReference(event.target.value)
+                  }
                   disabled={savingAddress}
                 />
               </div>
@@ -325,7 +387,9 @@ export default function ProfilePage() {
                 onClick={handleCreateAddress}
                 disabled={savingAddress}
               >
-                {savingAddress ? 'Guardando...' : 'Agregar dirección'}
+                {savingAddress
+                  ? 'Guardando...'
+                  : 'Agregar dirección'}
               </Button>
 
               {addressFeedback && (
@@ -372,42 +436,67 @@ export default function ProfilePage() {
 
         <CardContent className="space-y-5">
           <div className="rounded-xl border bg-muted/20 p-4">
-            <h3 className="text-sm font-semibold">Nuevo documento</h3>
+            <h3 className="text-sm font-semibold">
+              Nuevo documento
+            </h3>
 
             <div className="mt-3 grid gap-3 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="document_type">Tipo</Label>
+                <Label htmlFor="document_type">
+                  Tipo
+                </Label>
+
                 <select
                   id="document_type"
                   value={documentType}
-                  onChange={(event) => setDocumentType(event.target.value)}
+                  onChange={(event) =>
+                    setDocumentType(event.target.value)
+                  }
                   disabled={savingDocument}
                   className="h-8 w-full rounded-lg border border-input bg-background px-2.5 text-sm"
                 >
-                  <option value="CEDULA">Cédula</option>
-                  <option value="PASAPORTE">Pasaporte</option>
-                  <option value="LICENCIA">Licencia</option>
+                  <option value="CEDULA">
+                    Cédula
+                  </option>
+
+                  <option value="PASAPORTE">
+                    Pasaporte
+                  </option>
+
+                  <option value="LICENCIA">
+                    Licencia
+                  </option>
                 </select>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="document_number">Número</Label>
+                <Label htmlFor="document_number">
+                  Número
+                </Label>
+
                 <Input
                   id="document_number"
                   placeholder="123456789"
                   value={documentNumber}
-                  onChange={(event) => setDocumentNumber(event.target.value)}
+                  onChange={(event) =>
+                    setDocumentNumber(event.target.value)
+                  }
                   disabled={savingDocument}
                 />
               </div>
 
               <div className="space-y-2 sm:col-span-2">
-                <Label htmlFor="document_file">URL de archivo (opcional)</Label>
+                <Label htmlFor="document_file">
+                  URL de archivo (opcional)
+                </Label>
+
                 <Input
                   id="document_file"
                   placeholder="https://..."
                   value={documentFile}
-                  onChange={(event) => setDocumentFile(event.target.value)}
+                  onChange={(event) =>
+                    setDocumentFile(event.target.value)
+                  }
                   disabled={savingDocument}
                 />
               </div>
@@ -418,7 +507,9 @@ export default function ProfilePage() {
                 onClick={handleCreateDocument}
                 disabled={savingDocument}
               >
-                {savingDocument ? 'Guardando...' : 'Agregar documento'}
+                {savingDocument
+                  ? 'Guardando...'
+                  : 'Agregar documento'}
               </Button>
 
               {documentFeedback && (

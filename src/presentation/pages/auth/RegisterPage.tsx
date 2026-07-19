@@ -1,9 +1,14 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import {
+  Link,
+  useNavigate,
+} from 'react-router-dom'
 
 import { ApiException } from '@/domain/exceptions/api.exception'
 import { authUseCase } from '@/infrastructure/factories/auth.factory'
+import { localTokenStorage } from '@/infrastructure/storage/local-token-storage'
+import { localUserStorage } from '@/infrastructure/storage/local-user-storage'
 import {
   Alert,
   AlertDescription,
@@ -33,22 +38,52 @@ export default function RegisterPage() {
   ) {
     event.preventDefault()
 
+    const normalizedUsername = username.trim()
+    const normalizedEmail = email.trim()
+
     try {
       setLoading(true)
       setError('')
 
+      /*
+       * Primero se crea la cuenta.
+       */
       await authUseCase.register({
-        username: username.trim(),
-        email: email.trim(),
+        username: normalizedUsername,
+        email: normalizedEmail,
         password,
       })
 
-      navigate('/login', { replace: true })
+      /*
+       * Después se inicia sesión automáticamente
+       * utilizando las mismas credenciales.
+       */
+      const tokens = await authUseCase.login({
+        username: normalizedUsername,
+        password,
+      })
+
+      localTokenStorage.saveTokens(tokens)
+
+      const profile = await authUseCase.getProfile()
+      localUserStorage.saveUser(profile)
+
+      navigate(
+        '/',
+        {
+          replace: true,
+        },
+      )
     } catch (caughtError: unknown) {
+      localTokenStorage.clearTokens()
+      localUserStorage.clearUser()
+
       if (caughtError instanceof ApiException) {
         setError(caughtError.message)
       } else {
-        setError('No se pudo crear la cuenta.')
+        setError(
+          'No se pudo crear la cuenta.',
+        )
       }
     } finally {
       setLoading(false)
@@ -69,12 +104,19 @@ export default function RegisterPage() {
         </CardHeader>
 
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form
+            onSubmit={handleSubmit}
+            className="space-y-4"
+          >
             <div className="space-y-2">
-              <Label htmlFor="username">Usuario</Label>
+              <Label htmlFor="username">
+                Usuario
+              </Label>
 
               <Input
                 id="username"
+                name="username"
+                autoComplete="username"
                 value={username}
                 onChange={(event) =>
                   setUsername(event.target.value)
@@ -85,11 +127,15 @@ export default function RegisterPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email">Correo</Label>
+              <Label htmlFor="email">
+                Correo
+              </Label>
 
               <Input
                 id="email"
+                name="email"
                 type="email"
+                autoComplete="email"
                 value={email}
                 onChange={(event) =>
                   setEmail(event.target.value)
@@ -100,11 +146,15 @@ export default function RegisterPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">Contraseña</Label>
+              <Label htmlFor="password">
+                Contraseña
+              </Label>
 
               <Input
                 id="password"
+                name="password"
                 type="password"
+                autoComplete="new-password"
                 minLength={8}
                 value={password}
                 onChange={(event) =>
@@ -117,7 +167,9 @@ export default function RegisterPage() {
 
             {error && (
               <Alert variant="destructive">
-                <AlertDescription>{error}</AlertDescription>
+                <AlertDescription>
+                  {error}
+                </AlertDescription>
               </Alert>
             )}
 
@@ -126,12 +178,15 @@ export default function RegisterPage() {
               type="submit"
               disabled={loading}
             >
-              {loading ? 'Creando cuenta...' : 'Registrarse'}
+              {loading
+                ? 'Creando cuenta...'
+                : 'Registrarse'}
             </Button>
           </form>
 
           <p className="mt-4 text-center text-sm text-muted-foreground">
             ¿Ya tienes cuenta?{' '}
+
             <Link
               to="/login"
               className="text-primary hover:underline"
@@ -139,6 +194,16 @@ export default function RegisterPage() {
               Inicia sesión
             </Link>
           </p>
+
+          <Button
+            className="mt-3 w-full"
+            variant="outline"
+            asChild
+          >
+            <Link to="/">
+              Volver al inicio
+            </Link>
+          </Button>
         </CardContent>
       </Card>
     </main>

@@ -1,6 +1,10 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
-import { Link, useLocation, useNavigate } from 'react-router-dom'
+import {
+  Link,
+  useLocation,
+  useNavigate,
+} from 'react-router-dom'
 
 import { ApiException } from '@/domain/exceptions/api.exception'
 import { authUseCase } from '@/infrastructure/factories/auth.factory'
@@ -22,7 +26,20 @@ import { Input } from '@/presentation/components/ui/input'
 import { Label } from '@/presentation/components/ui/label'
 
 type LoginLocationState = {
-  from?: string | { pathname?: string }
+  from?: string | {
+    pathname?: string
+  }
+}
+
+function isSafeInternalPath(
+  path: string,
+): boolean {
+  return (
+    path.startsWith('/')
+    && !path.startsWith('//')
+    && path !== '/login'
+    && path !== '/register'
+  )
 }
 
 function resolveRedirect(
@@ -30,19 +47,27 @@ function resolveRedirect(
 ): string {
   const from = state?.from
 
-  if (typeof from === 'string' && from.startsWith('/')) {
+  if (
+    typeof from === 'string'
+    && isSafeInternalPath(from)
+  ) {
     return from
   }
 
   if (
-    from &&
-    typeof from === 'object' &&
-    typeof from.pathname === 'string'
+    from
+    && typeof from === 'object'
+    && typeof from.pathname === 'string'
+    && isSafeInternalPath(from.pathname)
   ) {
     return from.pathname
   }
 
-  return '/perfil'
+  /*
+   * Cuando el usuario abre el login normalmente,
+   * después de autenticarse regresa al Home.
+   */
+  return '/'
 }
 
 export default function LoginPage() {
@@ -73,11 +98,15 @@ export default function LoginPage() {
       const profile = await authUseCase.getProfile()
       localUserStorage.saveUser(profile)
 
+      const destination = resolveRedirect(
+        location.state as LoginLocationState | null,
+      )
+
       navigate(
-        resolveRedirect(
-          location.state as LoginLocationState | null,
-        ),
-        { replace: true },
+        destination,
+        {
+          replace: true,
+        },
       )
     } catch (caughtError: unknown) {
       localTokenStorage.clearTokens()
@@ -86,7 +115,9 @@ export default function LoginPage() {
       if (caughtError instanceof ApiException) {
         setError(caughtError.message)
       } else {
-        setError('No se pudo iniciar sesión.')
+        setError(
+          'No se pudo iniciar sesión.',
+        )
       }
     } finally {
       setLoading(false)
@@ -107,9 +138,14 @@ export default function LoginPage() {
         </CardHeader>
 
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form
+            onSubmit={handleSubmit}
+            className="space-y-4"
+          >
             <div className="space-y-2">
-              <Label htmlFor="username">Usuario</Label>
+              <Label htmlFor="username">
+                Usuario
+              </Label>
 
               <Input
                 id="username"
@@ -125,7 +161,9 @@ export default function LoginPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">Contraseña</Label>
+              <Label htmlFor="password">
+                Contraseña
+              </Label>
 
               <Input
                 id="password"
@@ -143,7 +181,9 @@ export default function LoginPage() {
 
             {error && (
               <Alert variant="destructive">
-                <AlertDescription>{error}</AlertDescription>
+                <AlertDescription>
+                  {error}
+                </AlertDescription>
               </Alert>
             )}
 
@@ -152,7 +192,9 @@ export default function LoginPage() {
               type="submit"
               disabled={loading}
             >
-              {loading ? 'Ingresando...' : 'Iniciar sesión'}
+              {loading
+                ? 'Ingresando...'
+                : 'Iniciar sesión'}
             </Button>
           </form>
 
@@ -161,11 +203,14 @@ export default function LoginPage() {
             variant="outline"
             asChild
           >
-            <Link to="/">Volver al inicio</Link>
+            <Link to="/">
+              Volver al inicio
+            </Link>
           </Button>
 
           <p className="mt-4 text-center text-sm text-muted-foreground">
             ¿No tienes cuenta?{' '}
+
             <Link
               to="/register"
               className="text-primary hover:underline"
