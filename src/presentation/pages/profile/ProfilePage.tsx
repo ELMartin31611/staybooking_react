@@ -43,33 +43,35 @@ export default function ProfilePage() {
 
   const [addressLine, setAddressLine] = useState('')
   const [addressCity, setAddressCity] = useState('')
-  const [addressCountry, setAddressCountry] = useState('')
   const [addressReference, setAddressReference] = useState('')
   const [savingAddress, setSavingAddress] = useState(false)
   const [addressFeedback, setAddressFeedback] = useState('')
+  const [profileFeedback, setProfileFeedback] = useState('')
+  const [profileError, setProfileError] = useState('')
 
   const [documentType, setDocumentType] = useState('CEDULA')
   const [documentNumber, setDocumentNumber] = useState('')
-  const [documentFile, setDocumentFile] = useState('')
+  const [documentFileUrl, setDocumentFileUrl] = useState('')
+  const [documentIssueDate, setDocumentIssueDate] = useState('')
+  const [documentExpiryDate, setDocumentExpiryDate] = useState('')
   const [savingDocument, setSavingDocument] = useState(false)
   const [documentFeedback, setDocumentFeedback] = useState('')
 
   useEffect(() => {
     async function loadData() {
       try {
-        const [
-          profileData,
-          customerData,
-          addressData,
-          documentData,
-        ] = await Promise.all([
-          authUseCase.getProfile(),
-          customerUseCase.getCustomer(),
-          customerUseCase.getAddresses(),
-          customerUseCase.getDocuments(),
+        const profileData = await authUseCase.getProfile()
+        const customerData = await customerUseCase.getCustomer(
+          profileData.id,
+        )
+
+        const [addressData, documentData] = await Promise.all([
+          customerUseCase.getAddresses(customerData?.id),
+          customerUseCase.getDocuments(customerData?.id),
         ])
 
         setProfile(profileData)
+        localUserStorage.saveUser(profileData)
         setCustomer(customerData)
         setAddresses(addressData)
         setDocuments(documentData)
@@ -89,38 +91,70 @@ export default function ProfilePage() {
       return
     }
 
-    const updatedProfile = await authUseCase.updateProfile(
-      profileData,
-    )
+    setProfileFeedback('')
+    setProfileError('')
 
-    setProfile(updatedProfile)
-    localUserStorage.saveUser(updatedProfile)
+    try {
+      const updatedProfile = await authUseCase.updateProfile(
+        profileData,
+      )
 
-    if (customer?.id) {
-      const updatedCustomer =
-        await customerUseCase.updateCustomer(
+      setProfile(updatedProfile)
+      localUserStorage.saveUser(updatedProfile)
+
+      if (
+        !customerData.cedula?.trim()
+        || !customerData.nombres?.trim()
+        || !customerData.apellidos?.trim()
+        || !customerData.nacionalidad?.trim()
+      ) {
+        setProfileError(
+          'Completa cédula, nombres, apellidos y nacionalidad para guardar el cliente.',
+        )
+        return
+      }
+
+      if (customer?.id) {
+        const updatedCustomer = await customerUseCase.updateCustomer(
           customer.id,
           customerData,
         )
 
-      setCustomer(updatedCustomer)
-    }
+        setCustomer(updatedCustomer)
+      } else {
+        const createdCustomer = await customerUseCase.createCustomer({
+          perfil: updatedProfile.id,
+          cedula: customerData.cedula,
+          nombres: customerData.nombres,
+          apellidos: customerData.apellidos,
+          fecha_nacimiento: customerData.fecha_nacimiento ?? null,
+          genero: customerData.genero ?? null,
+          nacionalidad: customerData.nacionalidad,
+          correo_alternativo: customerData.correo_alternativo ?? null,
+        })
 
-    setEditing(false)
+        setCustomer(createdCustomer)
+      }
+
+      setEditing(false)
+      setProfileFeedback('Perfil y datos del cliente guardados correctamente.')
+    } catch {
+      setProfileError('No se pudieron guardar los cambios del perfil.')
+    }
   }
 
   async function handleCreateAddress() {
     if (!customer?.id) {
+      setAddressFeedback('Primero completa y guarda los datos del cliente.')
       return
     }
 
     if (
       !addressLine.trim()
       || !addressCity.trim()
-      || !addressCountry.trim()
     ) {
       setAddressFeedback(
-        'Completa línea, ciudad y país para guardar la dirección.',
+        'Completa calle principal y ciudad para guardar la dirección.',
       )
       return
     }
@@ -131,12 +165,14 @@ export default function ProfilePage() {
 
       const createdAddress =
         await customerUseCase.createAddress({
-          customer: customer.id,
-          address_line: addressLine.trim(),
-          city: addressCity.trim(),
-          country: addressCountry.trim(),
-          reference: addressReference.trim() || undefined,
-          is_primary: addresses.length === 0,
+          cliente: customer.id,
+          provincia: '',
+          ciudad: addressCity.trim(),
+          calle_principal: addressLine.trim(),
+          calle_secundaria: null,
+          referencia: addressReference.trim() || null,
+          codigo_postal: null,
+          es_principal: addresses.length === 0,
         })
 
       setAddresses((current) => [
@@ -145,7 +181,6 @@ export default function ProfilePage() {
       ])
       setAddressLine('')
       setAddressCity('')
-      setAddressCountry('')
       setAddressReference('')
       setAddressFeedback(
         'Dirección guardada correctamente.',
@@ -161,6 +196,7 @@ export default function ProfilePage() {
 
   async function handleCreateDocument() {
     if (!customer?.id) {
+      setDocumentFeedback('Primero completa y guarda los datos del cliente.')
       return
     }
 
@@ -180,10 +216,13 @@ export default function ProfilePage() {
 
       const createdDocument =
         await customerUseCase.createDocument({
-          customer: customer.id,
-          document_type: documentType.trim(),
-          document_number: documentNumber.trim(),
-          file: documentFile.trim() || undefined,
+          cliente: customer.id,
+          tipo_documento: documentType.trim(),
+          numero_documento: documentNumber.trim(),
+          archivo_url: documentFileUrl.trim() || null,
+          fecha_emision: documentIssueDate.trim() || null,
+          fecha_expiracion: documentExpiryDate.trim() || null,
+          verificado: false,
         })
 
       setDocuments((current) => [
@@ -192,7 +231,9 @@ export default function ProfilePage() {
       ])
       setDocumentType('CEDULA')
       setDocumentNumber('')
-      setDocumentFile('')
+      setDocumentFileUrl('')
+      setDocumentIssueDate('')
+      setDocumentExpiryDate('')
       setDocumentFeedback(
         'Documento guardado correctamente.',
       )
@@ -235,6 +276,27 @@ export default function ProfilePage() {
           onSubmit={handleSaveProfile}
           onCancel={() => setEditing(false)}
         />
+      )}
+
+      {editing && profile && !customer && (
+        <EditProfileForm
+          profile={profile}
+          customer={null}
+          onSubmit={handleSaveProfile}
+          onCancel={() => setEditing(false)}
+        />
+      )}
+
+      {profileFeedback && (
+        <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+          {profileFeedback}
+        </p>
+      )}
+
+      {profileError && (
+        <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          {profileError}
+        </p>
       )}
 
       <Card>
@@ -285,7 +347,7 @@ export default function ProfilePage() {
 
         <CardContent className="space-y-2">
           <p>
-            <b>Cédula:</b> {customer?.cedula}
+            <b>Cédula:</b> {customer?.cedula ?? 'Sin definir'}
           </p>
 
           <p>
@@ -297,8 +359,21 @@ export default function ProfilePage() {
           </p>
 
           <p>
-            <b>Nacionalidad:</b>{' '}
-            {customer?.nacionalidad}
+            <b>Nacionalidad:</b> {customer?.nacionalidad ?? 'Sin definir'}
+          </p>
+
+          <p>
+            <b>Género:</b> {customer?.genero ?? 'Sin definir'}
+          </p>
+
+          <p>
+            <b>Fecha nacimiento:</b>{' '}
+            {customer?.fecha_nacimiento ?? 'Sin definir'}
+          </p>
+
+          <p>
+            <b>Correo alternativo:</b>{' '}
+            {customer?.correo_alternativo ?? 'Sin definir'}
           </p>
         </CardContent>
       </Card>
@@ -350,22 +425,6 @@ export default function ProfilePage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="address_country">
-                  País
-                </Label>
-
-                <Input
-                  id="address_country"
-                  placeholder="Colombia"
-                  value={addressCountry}
-                  onChange={(event) =>
-                    setAddressCountry(event.target.value)
-                  }
-                  disabled={savingAddress}
-                />
-              </div>
-
-              <div className="space-y-2 sm:col-span-2">
                 <Label htmlFor="address_reference">
                   Referencia (opcional)
                 </Label>
@@ -410,15 +469,20 @@ export default function ProfilePage() {
                 key={address.id}
                 className="border-b py-3"
               >
-                <p>{address.address_line}</p>
+                <p>{address.calle_principal}</p>
+
+                {address.calle_secundaria && (
+                  <p>{address.calle_secundaria}</p>
+                )}
 
                 <p>
-                  {address.city}, {address.country}
+                  {address.ciudad}
+                  {address.provincia ? `, ${address.provincia}` : ''}
                 </p>
 
-                {address.reference && (
+                {address.referencia && (
                   <p>
-                    Referencia: {address.reference}
+                    Referencia: {address.referencia}
                   </p>
                 )}
               </div>
@@ -486,16 +550,48 @@ export default function ProfilePage() {
               </div>
 
               <div className="space-y-2 sm:col-span-2">
-                <Label htmlFor="document_file">
+                <Label htmlFor="document_file_url">
                   URL de archivo (opcional)
                 </Label>
 
                 <Input
-                  id="document_file"
+                  id="document_file_url"
                   placeholder="https://..."
-                  value={documentFile}
+                  value={documentFileUrl}
                   onChange={(event) =>
-                    setDocumentFile(event.target.value)
+                    setDocumentFileUrl(event.target.value)
+                  }
+                  disabled={savingDocument}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="document_issue_date">
+                  Fecha emisión (opcional)
+                </Label>
+
+                <Input
+                  id="document_issue_date"
+                  type="date"
+                  value={documentIssueDate}
+                  onChange={(event) =>
+                    setDocumentIssueDate(event.target.value)
+                  }
+                  disabled={savingDocument}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="document_expiry_date">
+                  Fecha expiración (opcional)
+                </Label>
+
+                <Input
+                  id="document_expiry_date"
+                  type="date"
+                  value={documentExpiryDate}
+                  onChange={(event) =>
+                    setDocumentExpiryDate(event.target.value)
                   }
                   disabled={savingDocument}
                 />
@@ -531,12 +627,18 @@ export default function ProfilePage() {
                 className="border-b py-3"
               >
                 <p>
-                  Tipo: {document.document_type}
+                  Tipo: {document.tipo_documento}
                 </p>
 
                 <p>
-                  Número: {document.document_number}
+                  Número: {document.numero_documento}
                 </p>
+
+                {document.archivo_url && (
+                  <p>
+                    Archivo: {document.archivo_url}
+                  </p>
+                )}
               </div>
             ))
           )}

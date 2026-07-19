@@ -1,9 +1,11 @@
 export interface Address {
   id: number
-  customer: number
-  address_line: string
-  city: string
-  country: string
-  reference?: string
-  is_primary?: boolean
+  cliente: number
+  provincia: string
+  ciudad: string
+  calle_principal: string
+  calle_secundaria?: string | null
+  referencia?: string | null
+  codigo_postal?: string | null
+  es_principal?: boolean
 }

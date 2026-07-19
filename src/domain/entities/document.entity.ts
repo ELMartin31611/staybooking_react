@@ -1,7 +1,10 @@
 export interface Document {
   id: number
-  customer: number
-  document_type: string
-  document_number: string
-  file?: string
+  cliente: number
+  tipo_documento: string
+  numero_documento: string
+  archivo_url?: string | null
+  fecha_emision?: string | null
+  fecha_expiracion?: string | null
+  verificado?: boolean
 }

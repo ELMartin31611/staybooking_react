@@ -10,7 +10,7 @@ import { Label } from '@/presentation/components/ui/label'
 
 interface EditProfileFormProps {
   profile: UserProfile
-  customer: Customer
+  customer: Customer | null
   onSubmit: (
     profileData: Partial<UserProfile>,
     customerData: Partial<Customer>,
@@ -26,14 +26,22 @@ export default function EditProfileForm({
 }: EditProfileFormProps) {
   const [username, setUsername] = useState(profile.username ?? '')
   const [email, setEmail] = useState(profile.email ?? '')
+  const [telefono, setTelefono] = useState(profile.telefono ?? '')
   const [firstName, setFirstName] = useState(profile.first_name ?? '')
   const [lastName, setLastName] = useState(profile.last_name ?? '')
 
-  const [cedula, setCedula] = useState(customer.cedula ?? '')
-  const [nombres, setNombres] = useState(customer.nombres ?? '')
-  const [apellidos, setApellidos] = useState(customer.apellidos ?? '')
+  const [cedula, setCedula] = useState(customer?.cedula ?? '')
+  const [nombres, setNombres] = useState(customer?.nombres ?? '')
+  const [apellidos, setApellidos] = useState(customer?.apellidos ?? '')
+  const [fechaNacimiento, setFechaNacimiento] = useState(
+    customer?.fecha_nacimiento ?? '',
+  )
+  const [genero, setGenero] = useState(customer?.genero ?? '')
   const [nacionalidad, setNacionalidad] = useState(
-    customer.nacionalidad ?? '',
+    customer?.nacionalidad ?? '',
+  )
+  const [correoAlternativo, setCorreoAlternativo] = useState(
+    customer?.correo_alternativo ?? '',
   )
 
   const [loading, setLoading] = useState(false)
@@ -50,6 +58,7 @@ export default function EditProfileForm({
         {
           username: username.trim(),
           email: email.trim(),
+          telefono: telefono.trim() || null,
           first_name: firstName.trim(),
           last_name: lastName.trim(),
         },
@@ -57,7 +66,10 @@ export default function EditProfileForm({
           cedula: cedula.trim(),
           nombres: nombres.trim(),
           apellidos: apellidos.trim(),
+          fecha_nacimiento: fechaNacimiento.trim() || null,
+          genero: genero.trim() || null,
           nacionalidad: nacionalidad.trim(),
+          correo_alternativo: correoAlternativo.trim() || null,
         },
       )
     } catch {
@@ -94,6 +106,18 @@ export default function EditProfileForm({
                 onChange={(event) => setEmail(event.target.value)}
                 disabled={loading}
                 required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="telefono">Teléfono</Label>
+              <Input
+                id="telefono"
+                type="tel"
+                value={telefono}
+                onChange={(event) => setTelefono(event.target.value)}
+                disabled={loading}
+                placeholder="Opcional"
               />
             </div>
 
@@ -158,6 +182,30 @@ export default function EditProfileForm({
               />
             </div>
 
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="fecha_nacimiento">Fecha nacimiento</Label>
+                <Input
+                  id="fecha_nacimiento"
+                  type="date"
+                  value={fechaNacimiento}
+                  onChange={(event) => setFechaNacimiento(event.target.value)}
+                  disabled={loading}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="genero">Género</Label>
+                <Input
+                  id="genero"
+                  value={genero}
+                  onChange={(event) => setGenero(event.target.value)}
+                  disabled={loading}
+                  placeholder="Ej: FEMENINO"
+                />
+              </div>
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="nacionalidad">Nacionalidad</Label>
               <Input
@@ -166,6 +214,18 @@ export default function EditProfileForm({
                 onChange={(event) => setNacionalidad(event.target.value)}
                 disabled={loading}
                 required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="correo_alternativo">Correo alternativo</Label>
+              <Input
+                id="correo_alternativo"
+                type="email"
+                value={correoAlternativo}
+                onChange={(event) => setCorreoAlternativo(event.target.value)}
+                disabled={loading}
+                placeholder="Opcional"
               />
             </div>
           </div>
