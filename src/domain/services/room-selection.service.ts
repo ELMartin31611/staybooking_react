@@ -8,63 +8,71 @@ export class RoomSelectionService {
     selections: RoomSelection[],
     selection: RoomSelection,
   ): RoomSelection[] {
-    const existingSelection = selections.find(
-      (item) => item.roomId === selection.roomId,
-    )
-
-    if (existingSelection) {
-      return selections.map((item) =>
-        item.roomId === selection.roomId
-          ? {
-              ...item,
-              quantity: item.quantity + selection.quantity,
-            }
-          : item,
+    const alreadySelected =
+      selections.some(
+        (item) =>
+          item.roomId === selection.roomId,
       )
+
+    if (alreadySelected) {
+      return selections
     }
 
-    return [...selections, selection]
+    return [
+      ...selections,
+      {
+        ...selection,
+        quantity: 1,
+      },
+    ]
   }
 
   remove(
     selections: RoomSelection[],
     roomId: number,
   ): RoomSelection[] {
-    return selections.filter((item) => item.roomId !== roomId)
+    return selections.filter(
+      (item) =>
+        item.roomId !== roomId,
+    )
   }
 
   updateQuantity(
     selections: RoomSelection[],
     roomId: number,
-    quantity: number,
+    _quantity: number,
   ): RoomSelection[] {
-    if (quantity <= 0) {
-      return this.remove(selections, roomId)
-    }
-
-    return selections.map((item) =>
-      item.roomId === roomId
-        ? {
-            ...item,
-            quantity,
-          }
-        : item,
+    return selections.map(
+      (item) =>
+        item.roomId === roomId
+          ? {
+              ...item,
+              quantity: 1,
+            }
+          : item,
     )
   }
 
   calculateSummary(
     selections: RoomSelection[],
   ): BookingCartSummary {
-    const totalRooms = selections.reduce(
-      (total, item) => total + item.quantity,
-      0,
-    )
+    const normalizedSelections =
+      selections.map(
+        (selection) => ({
+          ...selection,
+          quantity: 1,
+        }),
+      )
 
-    const subtotal = selections.reduce(
-      (total, item) =>
-        total + item.pricePerNight * item.quantity,
-      0,
-    )
+    const totalRooms =
+      normalizedSelections.length
+
+    const subtotal =
+      normalizedSelections.reduce(
+        (total, item) =>
+          total + item.pricePerNight,
+        0,
+      )
 
     return {
       totalRooms,

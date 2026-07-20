@@ -8,6 +8,14 @@ export interface Room {
   observaciones: string
   created_at: string
   updated_at: string
+
   hotel: number
+  hotel_nombre?: string
+
   tipo_habitacion: number
+  tipo_habitacion_nombre?: string
+
+  capacidad_adultos?: number
+  capacidad_ninos?: number
+  capacidad_total?: number
 }
