@@ -18,6 +18,8 @@ import HotelsCatalogPage from '@/presentation/pages/catalog/HotelsCatalogPage'
 import RoomDetailPage from '@/presentation/pages/catalog/RoomDetailPage'
 import ForbiddenPage from '@/presentation/pages/ForbiddenPage'
 import NotFoundPage from '@/presentation/pages/NotFoundPage'
+import InvoicePage from '@/presentation/pages/payments/InvoicePage'
+import PaymentPage from '@/presentation/pages/payments/PaymentPage'
 import ProfilePage from '@/presentation/pages/profile/ProfilePage'
 import ComingSoonPage from '@/presentation/pages/public/ComingSoonPage'
 import HomePage from '@/presentation/pages/public/HomePage'
@@ -94,6 +96,16 @@ export default function AppRouter() {
             <Route
               path="/mis-reservas/:reservationId"
               element={<ReservationDetailPage />}
+            />
+
+            <Route
+              path="/mis-reservas/:reservationId/pagar"
+              element={<PaymentPage />}
+            />
+
+            <Route
+              path="/facturas/:invoiceId"
+              element={<InvoicePage />}
             />
 
             <Route
