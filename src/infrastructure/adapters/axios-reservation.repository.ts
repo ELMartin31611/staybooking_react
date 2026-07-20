@@ -1,3 +1,4 @@
+import type { CreateReservationDto } from '@/application/dtos/create-reservation.dto'
 import type { PaginatedResult } from '@/domain/entities/paginated-result.entity'
 import type { Reservation } from '@/domain/entities/reservation.entity'
 import type { ReservationRepository } from '@/domain/ports/reservation.repository'
@@ -20,6 +21,18 @@ function getReservations(
 
 export class AxiosReservationRepository
   implements ReservationRepository {
+  async createReservation(
+    data: CreateReservationDto,
+  ): Promise<Reservation> {
+    const response =
+      await apiClient.post<Reservation>(
+        `${apiConfig.endpoints.reservations.reservations}crear-completa/`,
+        data,
+      )
+
+    return response.data
+  }
+
   async getReservations(): Promise<Reservation[]> {
     const { data } =
       await apiClient.get<ReservationCollectionResponse>(

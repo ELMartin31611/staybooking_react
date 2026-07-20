@@ -4,7 +4,18 @@ export interface AddRoomSelectionDto {
   roomTypeId: number
   roomNumber: string
   roomTypeName: string
-  pricePerNight: number
+
+  referencePricePerNight: number | null
+  currency: string
   imageUrl: string | null
-  quantity?: number
+
+  includedGuestCapacity: number
+  extraGuestCapacity: number
+
+  maxAdults: number
+  maxChildren: number
+  maxGuests: number
+
+  adults?: number
+  children?: number
 }

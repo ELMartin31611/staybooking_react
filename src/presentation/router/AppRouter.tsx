@@ -23,6 +23,7 @@ import ComingSoonPage from '@/presentation/pages/public/ComingSoonPage'
 import HomePage from '@/presentation/pages/public/HomePage'
 import MyReservationsPage from '@/presentation/pages/reservations/MyReservationsPage'
 import ReservationDetailPage from '@/presentation/pages/reservations/ReservationDetailPage'
+import ReservationGuestsPage from '@/presentation/pages/reservations/ReservationGuestsPage'
 import SelectedRoomsPage from '@/presentation/pages/reservations/SelectedRoomsPage'
 
 import ProtectedRoute from './ProtectedRoute'
@@ -98,6 +99,11 @@ export default function AppRouter() {
             <Route
               path="/reserva/seleccion"
               element={<SelectedRoomsPage />}
+            />
+
+            <Route
+              path="/reserva/huespedes"
+              element={<ReservationGuestsPage />}
             />
           </Route>
         </Route>

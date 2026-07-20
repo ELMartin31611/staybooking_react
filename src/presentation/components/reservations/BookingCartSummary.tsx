@@ -1,81 +1,133 @@
-import type { BookingCartSummary as BookingCartSummaryData } from '@/domain/entities/room-selection.entity'
-import { Button } from '@/presentation/components/ui/button'
+import {
+  ArrowRight,
+  BedDouble,
+  Users,
+} from 'lucide-react'
 
-interface BookingCartSummaryProps {
-  summary: BookingCartSummaryData
-  onClear: () => void
+import type { BookingCartSummary as Summary } from '@/domain/entities/room-selection.entity'
+import { Button } from '@/presentation/components/ui/button'
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '@/presentation/components/ui/card'
+import { Separator } from '@/presentation/components/ui/separator'
+
+interface Props {
+  summary: Summary
+  currency: string
+  hasMissingRates: boolean
+  disabled?: boolean
   onContinue: () => void
-  isChecking: boolean
+}
+
+function money(
+  value: number,
+  currency: string,
+): string {
+  return new Intl.NumberFormat(
+    'es-EC',
+    {
+      style: 'currency',
+      currency,
+    },
+  ).format(value)
 }
 
 export default function BookingCartSummary({
   summary,
-  onClear,
+  currency,
+  hasMissingRates,
+  disabled = false,
   onContinue,
-  isChecking,
-}: BookingCartSummaryProps) {
+}: Props) {
   return (
-    <aside className="rounded-2xl border bg-card p-5 shadow-sm">
-      <h2 className="text-xl font-semibold">
-        Resumen de la selección
-      </h2>
+    <Card className="sticky top-24">
+      <CardHeader>
+        <CardTitle>
+          Resumen de la selección
+        </CardTitle>
+      </CardHeader>
 
-      <dl className="mt-5 space-y-4">
-        <div className="flex items-center justify-between text-sm">
-          <dt className="text-muted-foreground">
-            Habitaciones seleccionadas
-          </dt>
+      <CardContent className="space-y-4">
+        <p className="flex justify-between text-sm">
+          <span className="inline-flex items-center gap-2 text-muted-foreground">
+            <BedDouble className="size-4" />
+            Habitaciones
+          </span>
 
-          <dd className="font-semibold">
-            {summary.totalRooms}
-          </dd>
+          <strong>{summary.totalRooms}</strong>
+        </p>
+
+        <p className="flex justify-between text-sm">
+          <span className="inline-flex items-center gap-2 text-muted-foreground">
+            <Users className="size-4" />
+            Adultos
+          </span>
+
+          <strong>{summary.totalAdults}</strong>
+        </p>
+
+        <p className="flex justify-between text-sm">
+          <span className="text-muted-foreground">
+            Niños
+          </span>
+
+          <strong>{summary.totalChildren}</strong>
+        </p>
+
+        <p className="flex justify-between text-sm">
+          <span className="text-muted-foreground">
+            Huéspedes extra
+          </span>
+
+          <strong>
+            {summary.totalExtraGuests}
+          </strong>
+        </p>
+
+        <Separator />
+
+        <div className="flex items-end justify-between gap-3">
+          <span className="text-sm text-muted-foreground">
+            Referencia por noche
+          </span>
+
+          <strong className="text-2xl">
+            {money(
+              summary.referencePricePerNight,
+              currency,
+            )}
+          </strong>
         </div>
 
-        <div className="border-t pt-4">
-          <div className="flex items-center justify-between">
-            <dt className="font-medium text-muted-foreground">
-              Referencia por noche
-            </dt>
+        <p className="text-xs text-muted-foreground">
+          El precio se cobra una vez por habitación.
+          Únicamente los huéspedes que superen la
+          capacidad incluida generan un recargo del 50%.
+        </p>
 
-            <dd className="text-2xl font-bold">
-              ${summary.subtotal.toFixed(2)}
-            </dd>
-          </div>
-
-          <p className="mt-2 text-xs text-muted-foreground">
-            Este valor es referencial. El total definitivo
-            será calculado por el backend según fechas,
-            huéspedes, temporadas e impuestos.
+        {hasMissingRates && (
+          <p className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
+            Una habitación no tiene una tarifa válida.
           </p>
-        </div>
-      </dl>
+        )}
 
-      <Button
-        type="button"
-        className="mt-6 w-full"
-        onClick={onContinue}
-        disabled={
-          summary.totalRooms === 0
-          || isChecking
-        }
-      >
-        {isChecking
-          ? 'Verificando disponibilidad...'
-          : 'Comprobar disponibilidad'}
-      </Button>
-
-      <Button
-        type="button"
-        variant="outline"
-        className="mt-3 w-full"
-        onClick={onClear}
-        disabled={
-          summary.totalRooms === 0
-          || isChecking
-        }
-      >
-        Vaciar selección
-      </Button>
-    </aside>
+        <Button
+          type="button"
+          className="w-full"
+          disabled={
+            disabled
+            || summary.totalRooms === 0
+            || hasMissingRates
+          }
+          onClick={onContinue}
+        >
+          Continuar con huéspedes
+          <ArrowRight className="size-4" />
+        </Button>
+      </CardContent>
+    </Card>
   )
 }
