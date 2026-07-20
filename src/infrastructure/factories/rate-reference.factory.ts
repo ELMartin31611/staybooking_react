@@ -2,7 +2,13 @@ import { RateReferenceUseCase } from '@/application/use-cases/rate-reference.use
 import { AxiosRateReferenceRepository } from '@/infrastructure/adapters/axios-rate-reference.repository'
 
 export function createRateReferenceUseCase(): RateReferenceUseCase {
-  const repository = new AxiosRateReferenceRepository()
+  const repository =
+    new AxiosRateReferenceRepository()
 
-  return new RateReferenceUseCase(repository)
+  return new RateReferenceUseCase(
+    repository,
+  )
 }
+
+export const rateReferenceUseCase =
+  createRateReferenceUseCase()

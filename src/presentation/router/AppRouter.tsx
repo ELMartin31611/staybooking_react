@@ -22,7 +22,8 @@ import ProfilePage from '@/presentation/pages/profile/ProfilePage'
 import ComingSoonPage from '@/presentation/pages/public/ComingSoonPage'
 import HomePage from '@/presentation/pages/public/HomePage'
 import MyReservationsPage from '@/presentation/pages/reservations/MyReservationsPage'
-import SelectedReservationPage from '@/presentation/pages/reservations/SelectedReservationPage'
+import ReservationDetailPage from '@/presentation/pages/reservations/ReservationDetailPage'
+import SelectedRoomsPage from '@/presentation/pages/reservations/SelectedRoomsPage'
 
 import ProtectedRoute from './ProtectedRoute'
 
@@ -90,8 +91,13 @@ export default function AppRouter() {
             />
 
             <Route
+              path="/mis-reservas/:reservationId"
+              element={<ReservationDetailPage />}
+            />
+
+            <Route
               path="/reserva/seleccion"
-              element={<SelectedReservationPage />}
+              element={<SelectedRoomsPage />}
             />
           </Route>
         </Route>
