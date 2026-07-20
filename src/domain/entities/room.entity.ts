@@ -18,4 +18,6 @@ export interface Room {
   capacidad_adultos?: number
   capacidad_ninos?: number
   capacidad_total?: number
+  capacidad_extra?: number
+  capacidad_maxima?: number
 }

@@ -4,6 +4,73 @@ export type ReservationStatus =
   | 'cancelada'
   | 'finalizada'
 
+export type GuestType =
+  | 'adulto'
+  | 'nino'
+
+export interface ReservationRateBreakdown {
+  fecha: string
+  tarifa_id: number
+  temporada: string
+
+  precio_habitacion: string
+  huespedes_incluidos: number
+  huespedes_extra: number
+  cargo_unitario_extra: string
+  subtotal_huespedes_extra: string
+  total_noche: string
+  moneda: string
+
+  precio_noche?: string
+}
+
+export interface ReservationRoom {
+  id: number
+  reserva: number
+  habitacion: number
+  habitacion_numero: string
+  tipo_habitacion: string
+  hotel_id: number
+  hotel_nombre: string
+  tarifa: number
+
+  precio_noche: string
+  noches: number
+  cantidad_adultos: number
+  cantidad_ninos: number
+
+  cantidad_huespedes_incluidos: number
+  cantidad_huespedes_extra: number
+
+  subtotal_habitacion: string
+  subtotal_huespedes_extra: string
+
+  subtotal_adultos: string
+  subtotal_ninos: string
+
+  subtotal: string
+  detalle_tarifas:
+    ReservationRateBreakdown[]
+  moneda: string
+  estado: string
+}
+
+export interface ReservationGuest {
+  id: number
+  reserva: number
+  reserva_habitacion: number
+  habitacion_id: number
+  habitacion_numero: string
+  tipo_huesped: GuestType
+  nombres: string
+  apellidos: string
+  tipo_documento: string
+  numero_documento: string
+  edad: number
+  telefono: string | null
+  es_titular: boolean
+}
+
 export interface Reservation {
   id: number
   codigo: string
@@ -19,7 +86,13 @@ export interface Reservation {
   impuestos: string
   descuento: string
   total: string
+  moneda: string
   observaciones: string | null
   created_at: string
   updated_at: string
+
+  habitaciones_reservadas?:
+    ReservationRoom[]
+
+  huespedes?: ReservationGuest[]
 }

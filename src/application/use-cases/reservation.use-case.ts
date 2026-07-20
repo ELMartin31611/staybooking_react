@@ -1,3 +1,4 @@
+import type { CreateReservationDto } from '@/application/dtos/create-reservation.dto'
 import type { ReservationRepository } from '@/domain/ports/reservation.repository'
 
 export class ReservationUseCase {
@@ -7,6 +8,44 @@ export class ReservationUseCase {
     repository: ReservationRepository,
   ) {
     this.repository = repository
+  }
+
+  createReservation(
+    data: CreateReservationDto,
+  ) {
+    if (
+      !data.fecha_entrada
+      || !data.fecha_salida
+    ) {
+      throw new Error(
+        'Selecciona las fechas de la reserva.',
+      )
+    }
+
+    if (
+      data.fecha_salida
+      <= data.fecha_entrada
+    ) {
+      throw new Error(
+        'La fecha de salida debe ser posterior a la entrada.',
+      )
+    }
+
+    if (data.habitaciones.length === 0) {
+      throw new Error(
+        'Selecciona al menos una habitación.',
+      )
+    }
+
+    if (data.huespedes.length === 0) {
+      throw new Error(
+        'Registra los huéspedes de la reserva.',
+      )
+    }
+
+    return this.repository.createReservation(
+      data,
+    )
   }
 
   getReservations() {

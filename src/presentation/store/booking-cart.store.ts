@@ -11,21 +11,29 @@ import type {
 interface BookingCartState {
   selections: RoomSelection[]
   summary: BookingCartSummary
+
   checkIn: string
   checkOut: string
 
   addSelection: (
     selection: AddRoomSelectionDto,
   ) => void
-  removeSelection: (roomId: number) => void
-  updateQuantity: (
+
+  removeSelection: (
     roomId: number,
-    quantity: number,
   ) => void
+
+  updateGuests: (
+    roomId: number,
+    adults: number,
+    children: number,
+  ) => void
+
   setDates: (
     checkIn: string,
     checkOut: string,
   ) => void
+
   clearCart: () => void
 }
 
@@ -34,7 +42,10 @@ const roomSelectionUseCase =
 
 const emptySummary: BookingCartSummary = {
   totalRooms: 0,
-  subtotal: 0,
+  totalAdults: 0,
+  totalChildren: 0,
+  totalExtraGuests: 0,
+  referencePricePerNight: 0,
 }
 
 export const useBookingCartStore =
@@ -57,9 +68,8 @@ export const useBookingCartStore =
             return {
               selections,
               summary:
-                roomSelectionUseCase.summary(
-                  selections,
-                ),
+                roomSelectionUseCase
+                  .summary(selections),
             }
           })
         },
@@ -75,31 +85,32 @@ export const useBookingCartStore =
             return {
               selections,
               summary:
-                roomSelectionUseCase.summary(
-                  selections,
-                ),
+                roomSelectionUseCase
+                  .summary(selections),
             }
           })
         },
 
-        updateQuantity: (
+        updateGuests: (
           roomId,
-          quantity,
+          adults,
+          children,
         ) => {
           set((state) => {
             const selections =
-              roomSelectionUseCase.updateQuantity(
-                state.selections,
-                roomId,
-                quantity,
-              )
+              roomSelectionUseCase
+                .updateGuests(
+                  state.selections,
+                  roomId,
+                  adults,
+                  children,
+                )
 
             return {
               selections,
               summary:
-                roomSelectionUseCase.summary(
-                  selections,
-                ),
+                roomSelectionUseCase
+                  .summary(selections),
             }
           })
         },
@@ -125,13 +136,25 @@ export const useBookingCartStore =
       }),
       {
         name: 'staybooking-booking-cart',
+        version: 3,
 
-        partialize: (state) => ({
-          selections: state.selections,
-          summary: state.summary,
-          checkIn: state.checkIn,
-          checkOut: state.checkOut,
-        }),
+        migrate: (
+          persistedState,
+          version,
+        ) => {
+          const state =
+            persistedState as BookingCartState
+
+          if (version < 3) {
+            return {
+              ...state,
+              selections: [],
+              summary: emptySummary,
+            }
+          }
+
+          return state
+        },
       },
     ),
   )

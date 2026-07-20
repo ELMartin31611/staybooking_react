@@ -1,5 +1,10 @@
-import { useQuery } from '@tanstack/react-query'
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query'
 
+import type { CreateReservationDto } from '@/application/dtos/create-reservation.dto'
 import { reservationUseCase } from '@/infrastructure/factories/reservation.factory'
 
 export const reservationQueryKeys = {
@@ -45,5 +50,30 @@ export function useReservation(
       && reservationId > 0,
 
     staleTime: 30_000,
+  })
+}
+
+export function useCreateReservation() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (
+      data: CreateReservationDto,
+    ) =>
+      reservationUseCase
+        .createReservation(data),
+
+    onSuccess: async (reservation) => {
+      queryClient.setQueryData(
+        reservationQueryKeys.detail(
+          reservation.id,
+        ),
+        reservation,
+      )
+
+      await queryClient.invalidateQueries({
+        queryKey: reservationQueryKeys.all,
+      })
+    },
   })
 }

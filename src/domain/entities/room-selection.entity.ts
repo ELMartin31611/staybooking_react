@@ -4,12 +4,26 @@ export interface RoomSelection {
   roomTypeId: number
   roomNumber: string
   roomTypeName: string
-  pricePerNight: number
-  quantity: number
+
+  referencePricePerNight: number | null
+  currency: string
   imageUrl: string | null
+
+  includedGuestCapacity: number
+  extraGuestCapacity: number
+
+  maxAdults: number
+  maxChildren: number
+  maxGuests: number
+
+  adults: number
+  children: number
 }
 
 export interface BookingCartSummary {
   totalRooms: number
-  subtotal: number
+  totalAdults: number
+  totalChildren: number
+  totalExtraGuests: number
+  referencePricePerNight: number
 }
