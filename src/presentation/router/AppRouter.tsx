@@ -9,8 +9,15 @@ import {
   PrivateLayout,
   PublicLayout,
 } from '@/presentation/components/layout'
-import AdminPlaceholderPage from '@/presentation/pages/admin/AdminPlaceholderPage'
+import AdminBillingPage from '@/presentation/pages/admin/AdminBillingPage'
+import AdminDashboardPage from '@/presentation/pages/admin/AdminDashboardPage'
+import AdminHotelAddressesPage from '@/presentation/pages/admin/AdminHotelAddressesPage'
+import AdminHotelsPage from '@/presentation/pages/admin/AdminHotelsPage'
 import AdminRatesPage from '@/presentation/pages/admin/AdminRatesPage'
+import AdminReservationsPage from '@/presentation/pages/admin/AdminReservationsPage'
+import AdminRoomsPage from '@/presentation/pages/admin/AdminRoomsPage'
+import AdminRoomTypesPage from '@/presentation/pages/admin/AdminRoomTypesPage'
+import AdminServicesPage from '@/presentation/pages/admin/AdminServicesPage'
 import LoginPage from '@/presentation/pages/auth/LoginPage'
 import RegisterPage from '@/presentation/pages/auth/RegisterPage'
 import HotelDetailPage from '@/presentation/pages/catalog/HotelDetailPage'
@@ -95,7 +102,9 @@ export default function AppRouter() {
 
             <Route
               path="/mis-reservas/:reservationId"
-              element={<ReservationDetailPage />}
+              element={
+                <ReservationDetailPage />
+              }
             />
 
             <Route
@@ -115,7 +124,9 @@ export default function AppRouter() {
 
             <Route
               path="/reserva/huespedes"
-              element={<ReservationGuestsPage />}
+              element={
+                <ReservationGuestsPage />
+              }
             />
           </Route>
         </Route>
@@ -133,12 +144,55 @@ export default function AppRouter() {
           >
             <Route
               index
-              element={<AdminPlaceholderPage />}
+              element={
+                <AdminDashboardPage />
+              }
+            />
+
+            <Route
+              path="hoteles"
+              element={<AdminHotelsPage />}
+            />
+
+            <Route
+              path="direcciones-hotel"
+              element={
+                <AdminHotelAddressesPage />
+              }
+            />
+
+            <Route
+              path="tipos-habitacion"
+              element={
+                <AdminRoomTypesPage />
+              }
+            />
+
+            <Route
+              path="habitaciones"
+              element={<AdminRoomsPage />}
+            />
+
+            <Route
+              path="servicios"
+              element={<AdminServicesPage />}
             />
 
             <Route
               path="tarifas"
               element={<AdminRatesPage />}
+            />
+
+            <Route
+              path="reservas"
+              element={
+                <AdminReservationsPage />
+              }
+            />
+
+            <Route
+              path="cobros"
+              element={<AdminBillingPage />}
             />
 
             <Route
