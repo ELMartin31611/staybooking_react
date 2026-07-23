@@ -1,0 +1,287 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "@fontsource-variable/geist";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+    --font-heading: var(--font-sans);
+    --font-sans: 'Geist Variable', sans-serif;
+    --color-sidebar-ring: var(--sidebar-ring);
+    --color-sidebar-border: var(--sidebar-border);
+    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+    --color-sidebar-accent: var(--sidebar-accent);
+    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+    --color-sidebar-primary: var(--sidebar-primary);
+    --color-sidebar-foreground: var(--sidebar-foreground);
+    --color-sidebar: var(--sidebar);
+    --color-chart-5: var(--chart-5);
+    --color-chart-4: var(--chart-4);
+    --color-chart-3: var(--chart-3);
+    --color-chart-2: var(--chart-2);
+    --color-chart-1: var(--chart-1);
+    --color-ring: var(--ring);
+    --color-input: var(--input);
+    --color-border: var(--border);
+    --color-destructive: var(--destructive);
+    --color-accent-foreground: var(--accent-foreground);
+    --color-accent: var(--accent);
+    --color-muted-foreground: var(--muted-foreground);
+    --color-muted: var(--muted);
+    --color-secondary-foreground: var(--secondary-foreground);
+    --color-secondary: var(--secondary);
+    --color-primary-foreground: var(--primary-foreground);
+    --color-primary: var(--primary);
+    --color-popover-foreground: var(--popover-foreground);
+    --color-popover: var(--popover);
+    --color-card-foreground: var(--card-foreground);
+    --color-card: var(--card);
+    --color-foreground: var(--foreground);
+    --color-background: var(--background);
+    --radius-sm: calc(var(--radius) * 0.6);
+    --radius-md: calc(var(--radius) * 0.8);
+    --radius-lg: var(--radius);
+    --radius-xl: calc(var(--radius) * 1.4);
+    --radius-2xl: calc(var(--radius) * 1.8);
+    --radius-3xl: calc(var(--radius) * 2.2);
+    --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+    transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, box-shadow;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 200ms;
+  }
+  html {
+    min-height: 100%;
+    @apply font-sans scroll-smooth;
+    background-color: var(--background);
+    color: var(--foreground);
+  }
+  body {
+    min-height: 100%;
+    @apply bg-background text-foreground antialiased;
+    background-color: var(--background);
+    color: var(--foreground);
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+  #root {
+    min-height: 100%;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      scroll-behavior: auto !important;
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+/* ============================================================
+   LIGHT MODE — Paleta Rose / Red
+   Acento primario: rose-600 (#e11d48) → ratio 4.6:1 sobre blanco ✓ AA
+   ============================================================ */
+:root {
+  /* Fondos */
+  --background: #fdf6f7;
+  --card:        #ffffff;
+  --popover:     #ffffff;
+
+  /* Texto */
+  --foreground:          #1c0a0e;  /* ~16:1 sobre blanco ✓ AAA */
+  --card-foreground:     #1c0a0e;
+  --popover-foreground:  #1c0a0e;
+
+  /* Primario: rose-600 */
+  --primary:             #e11d48;
+  --primary-foreground:  #ffffff;
+
+  /* Secundario */
+  --secondary:           #fff1f3;
+  --secondary-foreground:#881337;
+
+  /* Muted */
+  --muted:               #ffe4e8;
+  --muted-foreground:    #9f1239;  /* 5.1:1 sobre #ffe4e8 ✓ AA */
+
+  /* Accent */
+  --accent:              #fecdd3;
+  --accent-foreground:   #881337;
+
+  /* Estados */
+  --destructive: #b91c1c;
+  --border:      #fecdd3;
+  --input:       #fff1f3;
+  --ring:        #e11d48;
+  --radius:      1rem;
+}
+
+/* ============================================================
+   DARK MODE — Paleta Negro Puro + Líneas Neón Rosado-Rojizo
+   · Fondo principal: #030305 (Negro absoluto)
+   · Tarjetas (Card): #0a0a0f (Obsidiana elevado +1)
+   · Popover/Elevado:#12121a (Obsidiana elevado +2)
+   · Texto principal: #ffffff (Blanco nítido AAA)
+   · Texto secundario:#a1a1aa (Gris nítido AAA)
+   · Primario acento: #ff0055 (Neón Rosado-Rojizo Vibrante)
+   · Bordes/Líneas:  rgba(255, 0, 85, 0.35) (Líneas Neón)
+   ============================================================ */
+.dark {
+  /* Fondos */
+  --background: #030305;
+  --card:        #0a0a0f;
+  --popover:     #12121a;
+
+  /* Texto */
+  --foreground:          #ffffff;
+  --card-foreground:     #ffffff;
+  --popover-foreground:  #ffffff;
+
+  /* Primario: Neón Rosado-Rojizo */
+  --primary:             #ff0055;
+  --primary-foreground:  #ffffff;
+
+  /* Secundario */
+  --secondary:           #161622;
+  --secondary-foreground:#ffffff;
+
+  /* Muted */
+  --muted:               #14141f;
+  --muted-foreground:    #a1a1aa;
+
+  /* Accent */
+  --accent:              #1a1a28;
+  --accent-foreground:   #ffffff;
+
+  /* Estados */
+  --destructive: #ff4d6d;
+  --border:      rgba(255, 0, 85, 0.35);
+  --input:       #12121a;
+  --ring:        #ff0055;
+}
+
+/* ============================================================
+   UTILIDADES GLOBALES
+   ============================================================ */
+
+/* Glass card — light */
+@utility glass-card {
+  background-color: rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(254, 205, 211, 0.55);
+  box-shadow: 0 8px 32px -8px rgba(225, 29, 72, 0.07);
+}
+
+/* Glass card — dark (Negro Neón Rosado-Rojizo) */
+@utility glass-card-dark {
+  background-color: rgba(10, 10, 15, 0.85);
+  backdrop-filter: blur(24px) saturate(200%);
+  border: 1px solid rgba(255, 0, 85, 0.45);
+  box-shadow: 0 0 30px rgba(255, 0, 85, 0.18), 0 20px 50px rgba(0, 0, 0, 0.9);
+}
+
+/* Mesh background — light */
+@utility mesh-bg {
+  background-image:
+    radial-gradient(at 0% 0%,   hsla(350, 100%, 97%, 0.85) 0px, transparent 50%),
+    radial-gradient(at 50% 0%,  hsla(345, 100%, 98%, 0.65) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, hsla(340, 100%, 96%, 0.75) 0px, transparent 50%);
+}
+
+/* Shimmer */
+@utility animate-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+@layer components {
+  /* Glass card dark override */
+  .dark .glass-card,
+  :is(.dark *) .glass-card {
+    background-color: rgba(10, 10, 15, 0.85);
+    backdrop-filter: blur(24px) saturate(200%);
+    border: 1px solid rgba(255, 0, 85, 0.45);
+    box-shadow: 0 0 30px rgba(255, 0, 85, 0.18), 0 20px 50px rgba(0, 0, 0, 0.9);
+  }
+
+  /* Mesh bg dark override */
+  .dark .mesh-bg,
+  :is(.dark *) .mesh-bg {
+    background-image:
+      radial-gradient(at 0% 0%,   hsla(340, 100%, 8%, 0.95) 0px, transparent 55%),
+      radial-gradient(at 50% 0%,  hsla(348, 100%, 12%, 0.45) 0px, transparent 50%),
+      radial-gradient(at 100% 0%, hsla(335, 100%, 7%, 0.90) 0px, transparent 55%);
+  }
+
+  /* Hero overlay de color de marca — neon rose */
+  .hero-brand-overlay {
+    background: linear-gradient(135deg, rgba(255,0,85,0.25) 0%, rgba(190,18,60,0.12) 50%, transparent 100%);
+  }
+
+  /* Page hero banner — siempre negro neón */
+  .page-hero {
+    background: linear-gradient(135deg, #030305 0%, #12121a 50%, #0a0a0f 100%);
+    border: 1px solid rgba(255, 0, 85, 0.35);
+    box-shadow: 0 0 20px rgba(255, 0, 85, 0.15);
+    color: #ffffff;
+  }
+
+  /* Elevation tokens dark mode */
+  .dark .surface-1  { background-color: #030305; }
+  .dark .surface-2  { background-color: #0a0a0f; }
+  .dark .surface-3  { background-color: #12121a; }
+  .dark .surface-4  { background-color: #161622; }
+
+  /* Shimmer animation */
+  .animate-shimmer::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background-image: linear-gradient(
+      90deg,
+      rgba(255,255,255,0) 0%,
+      rgba(255,255,255,0.15) 20%,
+      rgba(255,0,85,0.3) 60%,
+      rgba(255,255,255,0) 100%
+    );
+    animation: shimmer-effect 2s infinite;
+  }
+}
+
+@keyframes shimmer-effect {
+  100% { transform: translateX(100%); }
+}
+
+/* ─── Ken Burns: zoom + deriva lenta sobre la imagen hero ─── */
+@keyframes ken-burns {
+  0%   { transform: scale(1)    translateX(0%)    translateY(0%); }
+  33%  { transform: scale(1.06) translateX(-1%)   translateY(-0.5%); }
+  66%  { transform: scale(1.08) translateX(0.5%)  translateY(-1%); }
+  100% { transform: scale(1.04) translateX(-0.5%) translateY(0.5%); }
+}
+
+.hero-ken-burns {
+  animation: ken-burns 16s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
+/* ─── Transición suave modo claro ↔ oscuro ───────────────── */
+html {
+  transition: background-color 350ms cubic-bezier(0.4, 0, 0.2, 1),
+              color 350ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+body {
+  min-width: 320px;
+  margin: 0;
+  background-color: var(--background);
+  color: var(--foreground);
+}

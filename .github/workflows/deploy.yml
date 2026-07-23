@@ -1,0 +1,57 @@
+name: Deploy StayBooking React to VPS
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Obtener codigo
+        uses: actions/checkout@v4
+
+      - name: Instalar Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Crear variables de produccion
+        run: |
+          printf "%s" "${{ secrets.REACT_ENV }}" > .env.production
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Construir React
+        run: npm run build
+
+      - name: Subir dist a la VM
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_KEY }}
+          source: "dist/*"
+          target: "/tmp/staybooking_react_deploy"
+
+      - name: Activar despliegue
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_KEY }}
+          script: |
+            set -e
+            rm -rf /var/www/staybooking_react/*
+            cp -r /tmp/staybooking_react_deploy/dist/. /var/www/staybooking_react/
+            chown -R www-data:www-data /var/www/staybooking_react
+            nginx -t
+            systemctl reload nginx
+            rm -rf /tmp/staybooking_react_deploy
